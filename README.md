@@ -1,58 +1,123 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# MediaLens
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+AI-ondersteund systeem dat nieuwsartikelen over dezelfde gebeurtenis uit meerdere bronnen verzamelt, elke bron een politieke oriëntatie meegeeft, en een neutrale samenvatting genereert die laat zien waar bronnen van mening verschillen. Backend-only in deze fase, gebouwd in Laravel.
 
-## About Laravel
+## Tech stack
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- Laravel (laravel/laravel), lokaal via XAMPP
+- MySQL database, lokaal beheerd via phpMyAdmin
+- PHP 8.5
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Opzetten op een nieuwe machine
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+1. Repo clonen
+2. `composer install`
+3. `.env.example` kopiëren naar `.env` en de database-instellingen invullen met je eigen lokale database naam, gebruiker en wachtwoord
+4. `php artisan key:generate`
+5. Database `medialens` aanmaken in phpMyAdmin
+6. `php artisan migrate:fresh --seed`
+7. `php artisan serve` om te checken of alles werkt
 
-## Learning Laravel
+De database hoeft niet handmatig overgezet te worden tussen machines, migraties en seeders bouwen hem overal identiek op.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## RSS-bronnen
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+De bronkleur-tabel wordt gevuld via `database/seeders/BronSeeder.php`. Oriëntatie komt uit de Media Bias Fact Check dataset. Momenteel actief:
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+| Bron | Feed URL | Oriëntatie |
+|---|---|---|
+| The Hill | `https://thehill.com/news/feed/` | neutral |
+| The Nation | `https://www.thenation.com/feed/?post_type=article` | left |
+| Fox News: Politics | `https://moxie.foxnews.com/google-publisher/politics.xml` | right |
 
-## Agentic Development
+Uitgecommentarieerd in de seeder, nog niet in gebruik:
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+| Bron | Feed URL | Oriëntatie |
+|---|---|---|
+| The New York Times: Politics | `https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml` | left-center |
+| Politico | `https://rss.politico.com/politics-news.xml` | left-center |
+| The Washington Post: Politics | `https://feeds.washingtonpost.com/rss/politics` | left-center |
+| Drudge Report | `https://feedpress.me/drudgereportfeed` | right-center |
+| The Daily Signal | `https://www.dailysignal.com/feed/` | right |
+| Washington Examiner | `https://www.washingtonexaminer.com/feed/` | right |
+| National Review | `https://www.nationalreview.com/feed/` | right |
 
-```bash
-composer require laravel/boost --dev
+Bekende dode of onbetrouwbare feeds, niet gebruiken:
+- CNN (`rss.cnn.com/rss/edition.rss`), geeft status 200 maar bevat bevroren data uit 2023
+- The Wall Street Journal (oude `online.wsj.com` link werkt niet meer)
+- HuffPost, The Guardian, Reuters, The Economist, New York Post, The Times (UK), MSNBC, Breitbart: nog niet bevestigd werkend
 
-php artisan boost:install
-```
+Let op: geen enkele bron mag zomaar toegevoegd worden zonder oriëntatie uit de dataset, en de tabel moet klein en zelf uitlegbaar blijven, dat is een expliciete eis uit de casus.
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+## Bekende beperkingen
 
-## Contributing
+- Een RSS-feed levert meestal alleen titel en een korte samenvatting, niet de volledige artikeltekst. De kolom `volledige_tekst` is dus voorlopig geen echte volledige tekst.
+- Bij het testen van een nieuwe feed altijd de publicatiedatums van de opgehaalde artikelen controleren, een status 200 zegt niets over of de feed nog actief bijgewerkt wordt.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Status en to-do
 
-## Code of Conduct
+### Basisopzet
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+- [x] Laravel geïnstalleerd en lokaal draaiend
+- [x] GitHub repo aangemaakt en gesynchroniseerd
+- [x] `.env` en lokale database ingesteld
+- [ ] Clonen en testen op tweede machine (laptop/pc)
 
-## Security Vulnerabilities
+### Bouwblok 1: Databasemodel
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+- [x] Migraties voor bronnen, gebeurtenissen, artikelen, samenvattingen
+- [x] Foreign keys en relaties in de migraties (`bron_id`, `gebeurtenis_id`)
+- [x] Eloquent models met `$table` expliciet gezet (Nederlandse tabelnamen worden niet automatisch herkend)
+- [x] Relaties op de models: hasMany, belongsTo, hasOne
+- [x] `$fillable` op elk model dat via `create()` of `update()` gevuld wordt
+- [x] BronSeeder met bronnen, oriëntatie en feed-URL
+- [x] Getest met `migrate:fresh --seed`
 
-## License
+### Bouwblok 2: Artikelen verzamelen
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+- [x] Artisan command `artikelen:ophalen` aangemaakt
+- [x] Bronnen met een feed-URL ophalen uit de database
+- [x] Feed per bron ophalen met de Laravel HTTP client
+- [x] Feed-inhoud parsen met `simplexml_load_string`
+- [x] Titel, URL, publicatiedatum en tekst per item uitlezen
+- [x] Publicatiedatum omzetten naar het juiste formaat
+- [x] Duplicaatcheck op URL voordat een artikel wordt opgeslagen
+- [x] Artikel opslaan gekoppeld aan de juiste bron
+- [x] Gecontroleerd dat een tweede keer draaien geen nieuwe duplicaten oplevert
+- [ ] Meer bronnen met werkende feeds toevoegen (zie RSS-bronnen hierboven)
+
+### Bouwblok 3: Gebeurtenissen groeperen
+
+- [ ] Service-klasse aanmaken, bijvoorbeeld `app/Services/GebeurtenisMatcher.php`
+- [ ] Aanroepen direct na het opslaan van een nieuw artikel in het command
+- [ ] Eenvoudige matching bouwen op basis van overlappende trefwoorden in de titel
+- [ ] Bepalen vanaf welke mate van overlap een artikel bij een bestaande gebeurtenis hoort
+- [ ] Nieuwe gebeurtenis aanmaken als er geen match is
+- [ ] `gebeurtenis_id` op het artikel updaten
+- [ ] Testen met artikelen die duidelijk over hetzelfde gaan (bijvoorbeeld hetzelfde onderwerp bij twee bronnen)
+- [ ] Testen met artikelen die duidelijk niet bij elkaar horen
+- [ ] Resultaat controleren in phpMyAdmin: kloppen de groeperingen
+
+### Bouwblok 4: Artikelen vergelijken
+
+- [ ] AI-integratie opzetten (API key, configuratie in `.env`)
+- [ ] Service-klasse aanmaken, bijvoorbeeld `app/Services/ArtikelVergelijker.php`
+- [ ] Artikelen van een gebeurtenis ophalen (via de `artikelen()` relatie op Gebeurtenis)
+- [ ] Prompt opstellen die vraagt om taalgebruik, benadrukte onderwerpen en behandelde actoren te benoemen
+- [ ] AI-aanroep uitvoeren en het antwoord verwerken
+- [ ] Testen met een gebeurtenis die artikelen van meerdere bronnen heeft
+- [ ] Beoordelen of de output bruikbaar genoeg is als input voor bouwblok 5
+
+### Bouwblok 5: Samenvatting genereren
+
+- [ ] Bestaande AI-service uitbreiden met een prompt voor de neutrale samenvatting
+- [ ] Prompt laten vragen om kernfeiten, betrokkenen, overeenstemming en verschil
+- [ ] Antwoord verwerken tot de losse velden van het Samenvatting-model
+- [ ] Samenvatting opslaan gekoppeld aan de gebeurtenis
+- [ ] Testen of de samenvatting daadwerkelijk neutraal aanvoelt en geen belangrijk verschil mist
+- [ ] Testen of de tekst begrijpelijk is voor een breed publiek, zoals de casus vraagt
+
+### Nog open, ongeacht bouwblok
+
+- [ ] Overwegen of de volledige artikeltekst gescraped moet worden naast de RSS-samenvatting
+- [ ] Meer bronnen met werkende feeds vinden voor een bredere dekking van het politieke spectrum

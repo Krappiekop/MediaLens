@@ -7,6 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 class Artikel extends Model
 {
     protected $table = 'artikelen';
+    protected $fillable = [
+        'titel',
+        'publicatiedatum',
+        'volledige_tekst',
+        'url',
+        'bron_id',
+        'gebeurtenis_id',
+    ];
+    
     public function bron()
     {
         return $this->belongsTo(Bron::class);

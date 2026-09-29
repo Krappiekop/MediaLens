@@ -14,21 +14,16 @@ class BronSeeder extends Seeder
     public function run(): void
     {
         Bron::insert([
-            ['naam' => 'CNN', 'orientatie' => 'left'],
-            ['naam' => 'HuffPost', 'orientatie' => 'left'],
-            ['naam' => 'MSNBC', 'orientatie' => 'left'],
-            ['naam' => 'The New York Times', 'orientatie' => 'left-center'],
-            ['naam' => 'The Washington Post', 'orientatie' => 'left-center'],
-            ['naam' => 'The Guardian', 'orientatie' => 'left-center'],
-            ['naam' => 'NPR', 'orientatie' => 'left-center'],
-            ['naam' => 'BBC', 'orientatie' => 'left-center'],
-            ['naam' => 'Reuters', 'orientatie' => 'neutral'],
-            ['naam' => 'The Economist', 'orientatie' => 'neutral'],
-            ['naam' => 'The Wall Street Journal', 'orientatie' => 'right-center'],
-            ['naam' => 'New York Post', 'orientatie' => 'right-center'],
-            ['naam' => 'The Times', 'orientatie' => 'right-center'],
-            ['naam' => 'Fox News', 'orientatie' => 'right'],
-            ['naam' => 'Breitbart', 'orientatie' => 'right'],
+            ['naam' => 'The Hill', 'orientatie' => 'neutral', 'feed_url' => 'https://thehill.com/news/feed/'],
+            ['naam' => 'The Nation', 'orientatie' => 'left', 'feed_url' => 'https://www.thenation.com/feed/?post_type=article'],
+            // ['naam' => 'The New York Times: Politics', 'orientatie' => 'left-center', 'feed_url' => 'https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml'],
+            // ['naam' => 'Politico', 'orientatie' => 'left-center', 'feed_url' => 'https://rss.politico.com/politics-news.xml'],
+            // ['naam' => 'The Washington Post: Politics', 'orientatie' => 'left-center', 'feed_url' => 'https://feeds.washingtonpost.com/rss/politics'],
+            // ['naam' => 'Drudge Report', 'orientatie' => 'right-center', 'feed_url' => 'https://feedpress.me/drudgereportfeed'],
+            // ['naam' => 'The Daily Signal', 'orientatie' => 'right', 'feed_url' => 'https://www.dailysignal.com/feed/'],
+            // ['naam' => 'Washington Examiner', 'orientatie' => 'right', 'feed_url' => 'https://www.washingtonexaminer.com/feed/'],
+            ['naam' => 'Fox News: Politics', 'orientatie' => 'right', 'feed_url' => 'https://moxie.foxnews.com/google-publisher/politics.xml'],
+            // ['naam' => 'National Review', 'orientatie' => 'right', 'feed_url' => 'https://www.nationalreview.com/feed/'],
         ]);
     }
 }
