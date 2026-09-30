@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class Gebeurtenis extends Model
 {
     protected $table = 'gebeurtenissen';
+    protected $fillable = [
+        'onderwerp',
+    ];
     public function artikelen()
     {
         return $this->hasMany(Artikel::class);

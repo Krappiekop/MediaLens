@@ -29,11 +29,11 @@ class ArtikelenOphalen extends Command
             // bij fout, geen verbinding, dan error en continue met de volgende bron
             try {
                 $response = Http::get($bron->feed_url);
-            } catch (ConnectionException $e){ 
+            } catch (ConnectionException $e) {
                 $this->error("Geen verbinding met {$bron->naam}: {$e->getMessage()}");
                 continue;
             }
-            
+
             // bij fout, 4xx- of 5xx-respons, dan error en continue met de volgende bron
             if ($response->failed()) {
                 $this->error("Fout bij ophalen bij {$bron->naam}: {$response->status()}");
@@ -43,7 +43,7 @@ class ArtikelenOphalen extends Command
             // bij lege XML, dan error en continue met de volgende bron
             libxml_use_internal_errors(true);
             $xml = simplexml_load_string($response->body());
-            if ($xml === false){
+            if ($xml === false) {
                 $this->error("Lege XML van {$bron->naam}, bron overgeslagen.");
                 continue;
             }

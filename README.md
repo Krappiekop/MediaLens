@@ -13,47 +13,51 @@ AI-ondersteund systeem dat nieuwsartikelen over dezelfde gebeurtenis uit meerder
 4. `php artisan key:generate`
 5. Database `medialens` aanmaken in phpMyAdmin
 6. `php artisan migrate:fresh --seed`
-7. `php artisan serve` om te checken of alles werkt
+7. `php artisan artikelen:ophalen` om artikelen binnen te halen en te groeperen
+8. `php artisan serve` om te checken of alles werkt
 
 De database hoeft niet handmatig overgezet te worden tussen machines, migraties en seeders bouwen hem overal identiek op.
 
 ## RSS-bronnen
-De bronkleur-tabel wordt gevuld via `database/seeders/BronSeeder.php`. Oriëntatie komt uit de Media Bias Fact Check dataset. Momenteel actief:
+De bronnentabel wordt gevuld via `database/seeders/BronSeeder.php`. Oriëntatie komt uit de Media Bias Fact Check dataset. Momenteel actief:
 
 | Bron | Feed URL | Oriëntatie |
 |---|---|---|
 | The Hill | `https://thehill.com/news/feed/` | neutral |
-| The Nation | `https://www.thenation.com/feed/?post_type=article` | left |
 | The New York Times: Politics | `https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml` | left-center |
-| Drudge Report | `https://feedpress.me/drudgereportfeed` | right-center |
+| The Washington Post: Politics | `https://feeds.washingtonpost.com/rss/politics` | left-center |
+| The Daily Signal | `https://www.dailysignal.com/feed/` | right |
 | Fox News: Politics | `https://moxie.foxnews.com/google-publisher/politics.xml` | right |
 
 Uitgecommentarieerd in de seeder, nog niet in gebruik:
 
 | Bron | Feed URL | Oriëntatie |
 |---|---|---|
-
 | Politico | `https://rss.politico.com/politics-news.xml` | left-center |
-| The Washington Post: Politics | `https://feeds.washingtonpost.com/rss/politics` | left-center |
-| The Daily Signal | `https://www.dailysignal.com/feed/` | right |
 | Washington Examiner | `https://www.washingtonexaminer.com/feed/` | right |
 | National Review | `https://www.nationalreview.com/feed/` | right |
 
-Bekende dode of onbetrouwbare feeds, niet gebruiken:
-- CNN (`rss.cnn.com/rss/edition.rss`), geeft status 200 maar bevat bevroren data uit 2023
-- The Wall Street Journal (oude `online.wsj.com` link werkt niet meer)
+Onbruikbaar gebleken, niet gebruiken:
+- CNN (`rss.cnn.com/rss/edition.rss`): status 200, maar bevroren data uit 2023
+- The Wall Street Journal: oude `online.wsj.com`-link werkt niet meer
+- Drudge Report (`feedpress.me/drudgereportfeed`): `description` is pagina-HTML (Patreon, andere sites, feedpress-GIF), niet de artikeltekst. Matching op die kolom groepeert dan alle Drudge-items op de boilerplate
+- The Nation (`thenation.com/feed/`): `description` is layout-HTML plus “appeared first on The Nation”, eveneens onbruikbaar voor matching
 - HuffPost, The Guardian, Reuters, The Economist, New York Post, The Times (UK), MSNBC, Breitbart: nog niet bevestigd werkend
 
-Let op: geen enkele bron mag zomaar toegevoegd worden zonder oriëntatie uit de dataset, en de tabel moet klein en zelf uitlegbaar blijven, dat is een expliciete eis uit de casus.
+Er is nu geen bron met oriëntatie `left` en geen `right-center`. Hill is neutral, NYT en Washington Post zijn left-center, Daily Signal en Fox zijn right. Dat is een gat in het spectrum. Bouwblok 4 en 5 kunnen daardoor minder “links versus rechts” laten zien.
+
+Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items openen, niet alleen de titel of de HTTP-status.
 
 ## Bekende beperkingen
-- Een RSS-feed levert meestal alleen titel en een korte samenvatting, niet de volledige artikeltekst. De kolom `volledige_tekst` is dus voorlopig geen echte volledige tekst.
-- Bij het testen van een nieuwe feed altijd de publicatiedatums van de opgehaalde artikelen controleren, een status 200 zegt niets over of de feed nog actief bijgewerkt wordt.
-- Trefwoordmatching is simpel en kan fout groeperen
-- De oriëntatie komt van een dataset en is een generalisatie per bron, niet per artikel
-- De AI kan zelf ook vooringenomen zijn
-- De tekst is alleen een RSS-samenvatting
-- Bekende beperkingen: Artikelen worden alleen bij het ophalen gematcht. Na een wijziging in de matcher is een reset van de database nodig.
+- Een RSS-feed levert meestal alleen titel en een korte samenvatting, niet de volledige artikeltekst. De kolom `volledige_tekst` is dus de RSS-omschrijving.
+- Status 200 zegt niets over of de feed actueel is. Altijd publicatiedatums controleren.
+- Status 200 zegt ook niets over de inhoud van `description`. Die kan HTML-layout zijn in plaats van artikeltekst. `strip_tags` haalt tags weg, niet herhaalde reclamezinnen.
+- Matching gebeurt op `volledige_tekst`, niet op de titel. Koppen over dezelfde gebeurtenis verschillen te sterk per bron. Dat wijkt af van de oorspronkelijke casusformulering (trefwoorden in de titel).
+- Overlapdrempel is 6 trefwoorden, tijdvenster max 3 dagen. Twee gedeelde woorden was te streng op titels en te los op omschrijvingen.
+- Trefwoordmatching blijft simpel: de eerste kandidaat die de drempel haalt wint. Daardoor kan een artikel in een groep belanden via ketting-matching, zonder dat het over hetzelfde nieuwsfeit gaat. Voorbeeld: in een SCOTUS-groep over third-country deportations zat ook een artikel over student loans, via gedeelde woorden als Trump of administration.
+- Artikelen worden alleen bij het ophalen of bij een handmatige `koppel()`-run gematcht. Na een wijziging in de matcher: `gebeurtenis_id` leegmaken, `gebeurtenissen` legen, opnieuw koppelen.
+- De oriëntatie komt van een dataset en is een generalisatie per bron, niet per artikel.
+- De AI (bouwblok 4 en 5) kan zelf ook vooringenomen zijn.
 
 ## Status en to-do
 
@@ -82,25 +86,24 @@ Let op: geen enkele bron mag zomaar toegevoegd worden zonder oriëntatie uit de 
 - [x] Duplicaatcheck op URL voordat een artikel wordt opgeslagen
 - [x] Artikel opslaan gekoppeld aan de juiste bron
 - [x] Gecontroleerd dat een tweede keer draaien geen nieuwe duplicaten oplevert
-
-- [x] Foutafhandeling bij het verbinden met de url
-- [x] Foutafhandeling bij het ophalen van de artikelen
+- [x] Foutafhandeling bij geen verbinding (`ConnectionException`)
+- [x] Foutafhandeling bij 4xx/5xx (`failed()`)
 - [x] Foutafhandeling bij kapotte of lege XML bij status 200
 
 ### Bouwblok 3: Gebeurtenissen groeperen
-- [x] Service-klasse aanmaken, bijvoorbeeld `app/Services/GebeurtenisMatcher.php`
+- [x] Service-klasse `app/Services/GebeurtenisMatcher.php`
 - [x] Aanroepen direct na het opslaan van een nieuw artikel in het command
-- [x] Stopwoorden eruit filteren. (the, or, says)
-- [ ] Eenvoudige matching bouwen op basis van overlappende trefwoorden in de titel
-- [ ] Bepalen hoe een gebeurtenis zijn titel krijgt (bijvoorbeeld titel van het eerste artikel)
-- [ ] Groepering in maximale tijdsperiode (bijvoorbeeld max 3 dagen)
-- [x] Bepalen vanaf welke mate van overlap een artikel bij een bestaande gebeurtenis hoort
-- [ ] Nieuwe gebeurtenis aanmaken als er geen match is
-- [ ] `gebeurtenis_id` op het artikel updaten
-- [ ] Testen met artikelen die duidelijk over hetzelfde gaan (bijvoorbeeld hetzelfde onderwerp bij twee bronnen)
-- [ ] Testen met artikelen die duidelijk niet bij elkaar horen
-- [ ] Resultaat controleren in phpMyAdmin: kloppen de groeperingen
-
+- [x] Stopwoorden eruit filteren
+- [x] Matching op overlap in `volledige_tekst` (RSS-omschrijving), niet de titel
+- [x] HTML uit de tekst strippen voor de trefwoorden
+- [x] Gebeurtenis krijgt als `onderwerp` de titel van het eerste artikel
+- [x] Groepering binnen max 3 dagen
+- [x] Drempel: minstens 6 gedeelde trefwoorden
+- [x] Nieuwe gebeurtenis aanmaken als er geen match is
+- [x] `gebeurtenis_id` op het artikel updaten
+- [x] Getest met artikelen over hetzelfde feit bij meerdere bronnen (SCOTUS third-country deportations)
+- [x] Getest dat duidelijk andere onderwerpen meestal niet bij elkaar horen
+- [x] Resultaat gecontroleerd in phpMyAdmin
 
 ### Bouwblok 4: Artikelen vergelijken
 - [ ] AI-integratie opzetten (API key, configuratie in `.env`)
@@ -122,5 +125,6 @@ Let op: geen enkele bron mag zomaar toegevoegd worden zonder oriëntatie uit de 
 - [ ] Testen of de tekst begrijpelijk is voor een breed publiek, zoals de casus vraagt
 
 ### Nog open, ongeacht bouwblok
+- [ ] Een werkende bron met oriëntatie `left` vinden, zodat het spectrum weer klopt
 - [ ] Overwegen of de volledige artikeltekst gescraped moet worden naast de RSS-samenvatting
-- [ ] Meer bronnen met werkende feeds vinden voor een bredere dekking van het politieke spectrum
+- [ ] Eventueel een `right-center` bron zoeken als vervanging van Drudge
