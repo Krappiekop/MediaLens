@@ -6,9 +6,12 @@ use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Http;
+
 use App\Models\Bron;
 use App\Models\Artikel;
-use Illuminate\Support\Facades\Http;
+use App\Services\GebeurtenisMatcher;
+
 
 class ArtikelenOphalen extends Command
 {
@@ -17,6 +20,8 @@ class ArtikelenOphalen extends Command
     public function handle()
     {
         $bronnen = Bron::whereNotNull('feed_url')->get();
+
+        $matcher = new GebeurtenisMatcher();
 
         foreach ($bronnen as $bron) {
             $this->info("Ophalen bij {$bron->naam}...");
@@ -53,13 +58,14 @@ class ArtikelenOphalen extends Command
                     continue;
                 }
 
-                Artikel::create([
+                $artikel = Artikel::create([
                     'titel' => $titel,
                     'publicatiedatum' => $publicatiedatum,
                     'volledige_tekst' => $tekst,
                     'url' => $url,
                     'bron_id' => $bron->id,
                 ]);
+                $matcher->koppel($artikel);
 
                 $this->line("- {$titel} ({$publicatiedatum})");
 

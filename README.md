@@ -85,16 +85,16 @@ Let op: geen enkele bron mag zomaar toegevoegd worden zonder oriëntatie uit de 
 
 - [x] Foutafhandeling bij het verbinden met de url
 - [x] Foutafhandeling bij het ophalen van de artikelen
-- [x] Foutafhandeling bij kappote of lege XML bij status 200
+- [x] Foutafhandeling bij kapotte of lege XML bij status 200
 
 ### Bouwblok 3: Gebeurtenissen groeperen
-- [ ] Service-klasse aanmaken, bijvoorbeeld `app/Services/GebeurtenisMatcher.php`
-- [ ] Aanroepen direct na het opslaan van een nieuw artikel in het command
+- [x] Service-klasse aanmaken, bijvoorbeeld `app/Services/GebeurtenisMatcher.php`
+- [x] Aanroepen direct na het opslaan van een nieuw artikel in het command
+- [x] Stopwoorden eruit filteren. (the, or, says)
 - [ ] Eenvoudige matching bouwen op basis van overlappende trefwoorden in de titel
-- [ ] Stopwoorden eruit filteren. (the, or, says)
 - [ ] Bepalen hoe een gebeurtenis zijn titel krijgt (bijvoorbeeld titel van het eerste artikel)
 - [ ] Groepering in maximale tijdsperiode (bijvoorbeeld max 3 dagen)
-- [ ] Bepalen vanaf welke mate van overlap een artikel bij een bestaande gebeurtenis hoort
+- [x] Bepalen vanaf welke mate van overlap een artikel bij een bestaande gebeurtenis hoort
 - [ ] Nieuwe gebeurtenis aanmaken als er geen match is
 - [ ] `gebeurtenis_id` op het artikel updaten
 - [ ] Testen met artikelen die duidelijk over hetzelfde gaan (bijvoorbeeld hetzelfde onderwerp bij twee bronnen)
