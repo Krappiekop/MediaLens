@@ -1,15 +1,12 @@
 # MediaLens
-
 AI-ondersteund systeem dat nieuwsartikelen over dezelfde gebeurtenis uit meerdere bronnen verzamelt, elke bron een politieke oriëntatie meegeeft, en een neutrale samenvatting genereert die laat zien waar bronnen van mening verschillen. Backend-only in deze fase, gebouwd in Laravel.
 
 ## Tech stack
-
 - Laravel (laravel/laravel), lokaal via XAMPP
 - MySQL database, lokaal beheerd via phpMyAdmin
 - PHP 8.5
 
 ## Opzetten op een nieuwe machine
-
 1. Repo clonen
 2. `composer install`
 3. `.env.example` kopiëren naar `.env` en de database-instellingen invullen met je eigen lokale database naam, gebruiker en wachtwoord
@@ -21,23 +18,23 @@ AI-ondersteund systeem dat nieuwsartikelen over dezelfde gebeurtenis uit meerder
 De database hoeft niet handmatig overgezet te worden tussen machines, migraties en seeders bouwen hem overal identiek op.
 
 ## RSS-bronnen
-
 De bronkleur-tabel wordt gevuld via `database/seeders/BronSeeder.php`. Oriëntatie komt uit de Media Bias Fact Check dataset. Momenteel actief:
 
 | Bron | Feed URL | Oriëntatie |
 |---|---|---|
 | The Hill | `https://thehill.com/news/feed/` | neutral |
 | The Nation | `https://www.thenation.com/feed/?post_type=article` | left |
+| The New York Times: Politics | `https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml` | left-center |
+| Drudge Report | `https://feedpress.me/drudgereportfeed` | right-center |
 | Fox News: Politics | `https://moxie.foxnews.com/google-publisher/politics.xml` | right |
 
 Uitgecommentarieerd in de seeder, nog niet in gebruik:
 
 | Bron | Feed URL | Oriëntatie |
 |---|---|---|
-| The New York Times: Politics | `https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml` | left-center |
+
 | Politico | `https://rss.politico.com/politics-news.xml` | left-center |
 | The Washington Post: Politics | `https://feeds.washingtonpost.com/rss/politics` | left-center |
-| Drudge Report | `https://feedpress.me/drudgereportfeed` | right-center |
 | The Daily Signal | `https://www.dailysignal.com/feed/` | right |
 | Washington Examiner | `https://www.washingtonexaminer.com/feed/` | right |
 | National Review | `https://www.nationalreview.com/feed/` | right |
@@ -50,21 +47,23 @@ Bekende dode of onbetrouwbare feeds, niet gebruiken:
 Let op: geen enkele bron mag zomaar toegevoegd worden zonder oriëntatie uit de dataset, en de tabel moet klein en zelf uitlegbaar blijven, dat is een expliciete eis uit de casus.
 
 ## Bekende beperkingen
-
 - Een RSS-feed levert meestal alleen titel en een korte samenvatting, niet de volledige artikeltekst. De kolom `volledige_tekst` is dus voorlopig geen echte volledige tekst.
 - Bij het testen van een nieuwe feed altijd de publicatiedatums van de opgehaalde artikelen controleren, een status 200 zegt niets over of de feed nog actief bijgewerkt wordt.
+- Trefwoordmatching is simpel en kan fout groeperen
+- De oriëntatie komt van een dataset en is een generalisatie per bron, niet per artikel
+- De AI kan zelf ook vooringenomen zijn
+- De tekst is alleen een RSS-samenvatting
+- Bekende beperkingen: Artikelen worden alleen bij het ophalen gematcht. Na een wijziging in de matcher is een reset van de database nodig.
 
 ## Status en to-do
 
 ### Basisopzet
-
 - [x] Laravel geïnstalleerd en lokaal draaiend
 - [x] GitHub repo aangemaakt en gesynchroniseerd
 - [x] `.env` en lokale database ingesteld
-- [ ] Clonen en testen op tweede machine (laptop/pc)
+- [x] Clonen en testen op tweede machine (laptop/pc)
 
 ### Bouwblok 1: Databasemodel
-
 - [x] Migraties voor bronnen, gebeurtenissen, artikelen, samenvattingen
 - [x] Foreign keys en relaties in de migraties (`bron_id`, `gebeurtenis_id`)
 - [x] Eloquent models met `$table` expliciet gezet (Nederlandse tabelnamen worden niet automatisch herkend)
@@ -74,7 +73,6 @@ Let op: geen enkele bron mag zomaar toegevoegd worden zonder oriëntatie uit de 
 - [x] Getest met `migrate:fresh --seed`
 
 ### Bouwblok 2: Artikelen verzamelen
-
 - [x] Artisan command `artikelen:ophalen` aangemaakt
 - [x] Bronnen met een feed-URL ophalen uit de database
 - [x] Feed per bron ophalen met de Laravel HTTP client
@@ -84,13 +82,18 @@ Let op: geen enkele bron mag zomaar toegevoegd worden zonder oriëntatie uit de 
 - [x] Duplicaatcheck op URL voordat een artikel wordt opgeslagen
 - [x] Artikel opslaan gekoppeld aan de juiste bron
 - [x] Gecontroleerd dat een tweede keer draaien geen nieuwe duplicaten oplevert
-- [ ] Meer bronnen met werkende feeds toevoegen (zie RSS-bronnen hierboven)
+
+- [x] Foutafhandeling bij het verbinden met de url
+- [x] Foutafhandeling bij het ophalen van de artikelen
+- [x] Foutafhandeling bij kappote of lege XML bij status 200
 
 ### Bouwblok 3: Gebeurtenissen groeperen
-
 - [ ] Service-klasse aanmaken, bijvoorbeeld `app/Services/GebeurtenisMatcher.php`
 - [ ] Aanroepen direct na het opslaan van een nieuw artikel in het command
 - [ ] Eenvoudige matching bouwen op basis van overlappende trefwoorden in de titel
+- [ ] Stopwoorden eruit filteren. (the, or, says)
+- [ ] Bepalen hoe een gebeurtenis zijn titel krijgt (bijvoorbeeld titel van het eerste artikel)
+- [ ] Groepering in maximale tijdsperiode (bijvoorbeeld max 3 dagen)
 - [ ] Bepalen vanaf welke mate van overlap een artikel bij een bestaande gebeurtenis hoort
 - [ ] Nieuwe gebeurtenis aanmaken als er geen match is
 - [ ] `gebeurtenis_id` op het artikel updaten
@@ -98,8 +101,8 @@ Let op: geen enkele bron mag zomaar toegevoegd worden zonder oriëntatie uit de 
 - [ ] Testen met artikelen die duidelijk niet bij elkaar horen
 - [ ] Resultaat controleren in phpMyAdmin: kloppen de groeperingen
 
-### Bouwblok 4: Artikelen vergelijken
 
+### Bouwblok 4: Artikelen vergelijken
 - [ ] AI-integratie opzetten (API key, configuratie in `.env`)
 - [ ] Service-klasse aanmaken, bijvoorbeeld `app/Services/ArtikelVergelijker.php`
 - [ ] Artikelen van een gebeurtenis ophalen (via de `artikelen()` relatie op Gebeurtenis)
@@ -109,15 +112,15 @@ Let op: geen enkele bron mag zomaar toegevoegd worden zonder oriëntatie uit de 
 - [ ] Beoordelen of de output bruikbaar genoeg is als input voor bouwblok 5
 
 ### Bouwblok 5: Samenvatting genereren
-
+- [ ] Artisan command om een samenvatting te genereren (bijvoorbeeld samenvattingen:genereren)
 - [ ] Bestaande AI-service uitbreiden met een prompt voor de neutrale samenvatting
 - [ ] Prompt laten vragen om kernfeiten, betrokkenen, overeenstemming en verschil
 - [ ] Antwoord verwerken tot de losse velden van het Samenvatting-model
 - [ ] Samenvatting opslaan gekoppeld aan de gebeurtenis
+- [ ] Alleen samenvatten als er nog geen samenvatting is, of als er nieuwe artikelen bij zijn gekomen
 - [ ] Testen of de samenvatting daadwerkelijk neutraal aanvoelt en geen belangrijk verschil mist
 - [ ] Testen of de tekst begrijpelijk is voor een breed publiek, zoals de casus vraagt
 
 ### Nog open, ongeacht bouwblok
-
 - [ ] Overwegen of de volledige artikeltekst gescraped moet worden naast de RSS-samenvatting
 - [ ] Meer bronnen met werkende feeds vinden voor een bredere dekking van het politieke spectrum
