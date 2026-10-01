@@ -28,13 +28,13 @@ De bronnentabel wordt gevuld via `database/seeders/BronSeeder.php`. Oriëntatie 
 | The Washington Post: Politics | `https://feeds.washingtonpost.com/rss/politics` | left-center |
 | The Daily Signal | `https://www.dailysignal.com/feed/` | right |
 | Fox News: Politics | `https://moxie.foxnews.com/google-publisher/politics.xml` | right |
+| Washington Examiner | `https://www.washingtonexaminer.com/feed/` | right |
 
 Uitgecommentarieerd in de seeder, nog niet in gebruik:
 
 | Bron | Feed URL | Oriëntatie |
 |---|---|---|
 | Politico | `https://rss.politico.com/politics-news.xml` | left-center |
-| Washington Examiner | `https://www.washingtonexaminer.com/feed/` | right |
 | National Review | `https://www.nationalreview.com/feed/` | right |
 
 Onbruikbaar gebleken, niet gebruiken:
@@ -53,7 +53,7 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - Status 200 zegt niets over of de feed actueel is. Altijd publicatiedatums controleren.
 - Status 200 zegt ook niets over de inhoud van `description`. Die kan HTML-layout zijn in plaats van artikeltekst. `strip_tags` haalt tags weg, niet herhaalde reclamezinnen.
 - Matching gebeurt op `volledige_tekst`, niet op de titel. Koppen over dezelfde gebeurtenis verschillen te sterk per bron. Dat wijkt af van de oorspronkelijke casusformulering (trefwoorden in de titel).
-- Overlapdrempel is 6 trefwoorden, tijdvenster max 3 dagen. Twee gedeelde woorden was te streng op titels en te los op omschrijvingen.
+- Overlapdrempel is 8 trefwoorden, tijdvenster max 3 dagen. Twee gedeelde woorden was te streng op titels en te los op omschrijvingen.
 - Trefwoordmatching blijft simpel: de eerste kandidaat die de drempel haalt wint. Daardoor kan een artikel in een groep belanden via ketting-matching, zonder dat het over hetzelfde nieuwsfeit gaat. Voorbeeld: in een SCOTUS-groep over third-country deportations zat ook een artikel over student loans, via gedeelde woorden als Trump of administration.
 - Artikelen worden alleen bij het ophalen of bij een handmatige `koppel()`-run gematcht. Na een wijziging in de matcher: `gebeurtenis_id` leegmaken, `gebeurtenissen` legen, opnieuw koppelen.
 - De oriëntatie komt van een dataset en is een generalisatie per bron, niet per artikel.
@@ -107,12 +107,12 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 
 ### Bouwblok 4: Artikelen vergelijken
 - [x] AI-integratie opzetten (API key, configuratie in `.env`)
-- [ ] Service-klasse aanmaken, bijvoorbeeld `app/Services/ArtikelVergelijker.php`
-- [ ] Artikelen van een gebeurtenis ophalen (via de `artikelen()` relatie op Gebeurtenis)
-- [ ] Prompt opstellen die vraagt om taalgebruik, benadrukte onderwerpen en behandelde actoren te benoemen
-- [ ] AI-aanroep uitvoeren en het antwoord verwerken
-- [ ] Testen met een gebeurtenis die artikelen van meerdere bronnen heeft
-- [ ] Beoordelen of de output bruikbaar genoeg is als input voor bouwblok 5
+- [x] Service-klasse aanmaken, bijvoorbeeld `app/Services/ArtikelVergelijker.php`
+- [x] Artikelen van een gebeurtenis ophalen (via de `artikelen()` relatie op Gebeurtenis)
+- [x] Prompt opstellen die vraagt om taalgebruik, benadrukte onderwerpen en behandelde actoren te benoemen
+- [x] AI-aanroep uitvoeren en het antwoord verwerken
+- [x] Testen met een gebeurtenis die artikelen van meerdere bronnen heeft
+- [x] Beoordelen of de output bruikbaar genoeg is als input voor bouwblok 5
 
 ### Bouwblok 5: Samenvatting genereren
 - [ ] Artisan command om een samenvatting te genereren (bijvoorbeeld samenvattingen:genereren)
