@@ -115,14 +115,14 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - [x] Beoordelen of de output bruikbaar genoeg is als input voor bouwblok 5
 
 ### Bouwblok 5: Samenvatting genereren
-- [ ] Artisan command om een samenvatting te genereren (bijvoorbeeld samenvattingen:genereren)
-- [ ] Bestaande AI-service uitbreiden met een prompt voor de neutrale samenvatting
-- [ ] Prompt laten vragen om kernfeiten, betrokkenen, overeenstemming en verschil
-- [ ] Antwoord verwerken tot de losse velden van het Samenvatting-model
-- [ ] Samenvatting opslaan gekoppeld aan de gebeurtenis
-- [ ] Alleen samenvatten als er nog geen samenvatting is, of als er nieuwe artikelen bij zijn gekomen
-- [ ] Testen of de samenvatting daadwerkelijk neutraal aanvoelt en geen belangrijk verschil mist
-- [ ] Testen of de tekst begrijpelijk is voor een breed publiek, zoals de casus vraagt
+- [x] Artisan command om een samenvatting te genereren (bijvoorbeeld samenvattingen:genereren)
+- [x] Bestaande AI-service uitbreiden met een prompt voor de neutrale samenvatting
+- [x] Prompt laten vragen om kernfeiten, betrokkenen, overeenstemming en verschil
+- [x] Antwoord verwerken tot de losse velden van het Samenvatting-model
+- [x] Samenvatting opslaan gekoppeld aan de gebeurtenis
+- [x] Alleen samenvatten als er nog geen samenvatting is, of als er nieuwe artikelen bij zijn gekomen
+- [x] Testen of de samenvatting daadwerkelijk neutraal aanvoelt en geen belangrijk verschil mist
+- [x] Testen of de tekst begrijpelijk is voor een breed publiek, zoals de casus vraagt
 
 ### Nog open, ongeacht bouwblok
 - [ ] Een werkende bron met oriëntatie `left` vinden, zodat het spectrum weer klopt

@@ -21,7 +21,7 @@ class GebeurtenisMatcher
         return $tekst !== '' ? $artikel->volledige_tekst : $artikel->titel;
     }
 
-    private int $minimaleOverlap = 8;                               // <--- minimale hoeveelheid trefwoorden die in beide teksten moeten voorkomen om een match te hebben (default 2)
+    private int $minimaleOverlap = 7;                               // <--- minimale hoeveelheid trefwoorden die in beide teksten moeten voorkomen om een match te hebben (default 2)
     private int $maxDagen = 3;
 
     // koppel de artikel aan een gebeurtenis
