@@ -106,7 +106,7 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - [x] Resultaat gecontroleerd in phpMyAdmin
 
 ### Bouwblok 4: Artikelen vergelijken
-- [ ] AI-integratie opzetten (API key, configuratie in `.env`)
+- [x] AI-integratie opzetten (API key, configuratie in `.env`)
 - [ ] Service-klasse aanmaken, bijvoorbeeld `app/Services/ArtikelVergelijker.php`
 - [ ] Artikelen van een gebeurtenis ophalen (via de `artikelen()` relatie op Gebeurtenis)
 - [ ] Prompt opstellen die vraagt om taalgebruik, benadrukte onderwerpen en behandelde actoren te benoemen

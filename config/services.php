@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'litellm' => [
+        'base_url' => env('LITELLM_BASE_URL'),
+        'api_key' => env('LITELLM_API_KEY'),
+        'model' => env('LITELLM_MODEL'),
+    ],
+
 ];
