@@ -49,7 +49,8 @@ class ArtikelVergelijker
 
         $prompt = "Hieronder staan nieuwsartikelen over dezelfde gebeurtenis.\n\n"
             . "Schrijf een neutrale samenvatting die begrijpelijk is voor een breed publiek.\n"
-            . "Gebruik geen politieke labels en kies geen partij.\n\n"
+            . "Gebruik geen politieke labels en kies geen partij.\n"
+            . "Noem bij de overeenstemming en verschil de namen van de bronnen.\n\n"
             . "Antwoord alleen met geldige JSON, zonder markdown, met precies deze keys:\n"
             . '{"kernfeiten":"","betrokkenen":"","overeenstemming":"","verschil":""}'
             . "\n\nArtikelen:\n\n"
