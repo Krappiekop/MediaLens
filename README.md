@@ -9,42 +9,69 @@ AI-ondersteund systeem dat nieuwsartikelen over dezelfde gebeurtenis uit meerder
 ## Opzetten op een nieuwe machine
 1. Repo clonen
 2. `composer install`
-3. `.env.example` kopiëren naar `.env` en de database-instellingen invullen met je eigen lokale database naam, gebruiker en wachtwoord
+3. `.env.example` kopiëren naar `.env` en de database-instellingen invullen met je eigen lokale database naam, gebruiker en wachtwoord. Vul ook `LITELLM_BASE_URL`, `LITELLM_API_KEY` en `LITELLM_MODEL` in. Die namen staan al in `.env.example`, met model `openrouter/deepseek/deepseek-v4-flash`. De key hoort alleen in `.env`, niet in git.
 4. `php artisan key:generate`
 5. Database `medialens` aanmaken in phpMyAdmin
 6. `php artisan migrate:fresh --seed`
 7. `php artisan artikelen:ophalen` om artikelen binnen te halen en te groeperen
-8. `php artisan serve` om te checken of alles werkt
+8. `php artisan samenvattingen:genereren` voor alle gebeurtenissen, of `php artisan samenvattingen:genereren 5` voor één id
+9. Controleren in de Artisan-output en in phpMyAdmin (`artikelen`, `gebeurtenissen`, `samenvattingen`)
+
+`php artisan serve` laat alleen zien dat Laravel start. Deze fase is backend-only. Of feeds en samenvattingen kloppen, zie je bij stap 7 tot en met 9.
 
 De database hoeft niet handmatig overgezet te worden tussen machines, migraties en seeders bouwen hem overal identiek op.
 
 ## RSS-bronnen
-De bronnentabel wordt gevuld via `database/seeders/BronSeeder.php`. Oriëntatie komt uit de Media Bias Fact Check dataset. Momenteel actief:
+De bronnentabel wordt gevuld via `database/seeders/BronSeeder.php`. Oriëntatie komt uit de Media Bias Fact Check dataset. De seeder zet deze feeds in de database.
+
+Politiek (VS):
 
 | Bron | Feed URL | Oriëntatie |
 |---|---|---|
-| The Hill | `https://thehill.com/news/feed/` | neutral |
 | The New York Times: Politics | `https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml` | left-center |
 | The Washington Post: Politics | `https://feeds.washingtonpost.com/rss/politics` | left-center |
+| The Hill | `https://thehill.com/news/feed/` | neutral |
 | The Daily Signal | `https://www.dailysignal.com/feed/` | right |
-| Fox News: Politics | `https://moxie.foxnews.com/google-publisher/politics.xml` | right |
 | Washington Examiner | `https://www.washingtonexaminer.com/feed/` | right |
+| Fox News: Politics | `https://moxie.foxnews.com/google-publisher/politics.xml` | right |
 
-Uitgecommentarieerd in de seeder, nog niet in gebruik:
+Wereldwijd:
 
 | Bron | Feed URL | Oriëntatie |
 |---|---|---|
-| Politico | `https://rss.politico.com/politics-news.xml` | left-center |
-| National Review | `https://www.nationalreview.com/feed/` | right |
+| BBC News: World | `https://feeds.bbci.co.uk/news/world/rss.xml` | left-center |
+| The Guardian: World | `https://www.theguardian.com/world/rss` | left-center |
+| Al Jazeera English | `https://www.aljazeera.com/xml/rss/all.xml` | left-center |
+| The New York Times: World | `https://rss.nytimes.com/services/xml/rss/nyt/World.xml` | left-center |
+| The Washington Post: World | `https://feeds.washingtonpost.com/rss/world` | left-center |
+| South China Morning Post | `https://www.scmp.com/rss/91/feed/` | left-center |
+| ABC News (Australia) | `https://www.abc.net.au/news/feed/45910/rss.xml` | left-center |
+| NDTV: Top stories | `https://feeds.feedburner.com/ndtvnews-top-stories` | left-center |
+| Sky News: World | `https://feeds.skynews.com/feeds/rss/world.xml` | neutral |
+| France 24 | `https://www.france24.com/en/rss` | neutral |
+
+Lokaal (VS):
+
+| Bron | Feed URL | Oriëntatie |
+|---|---|---|
+| NBC News | `https://feeds.nbcnews.com/nbcnews/public/news` | left-center |
+| CBS News | `https://www.cbsnews.com/feeds/rss/main.rss` | left-center |
+| The New York Times | `https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml` | left-center |
+| LA Times | `https://www.latimes.com/local/rss2.0.xml` | left-center |
+| New York Post | `https://nypost.com/feed` | right-center |
+
+Politico en National Review zitten niet meer in de seeder.
 
 Onbruikbaar gebleken, niet gebruiken:
 - CNN (`rss.cnn.com/rss/edition.rss`): status 200, maar bevroren data uit 2023
 - The Wall Street Journal: oude `online.wsj.com`-link werkt niet meer
 - Drudge Report (`feedpress.me/drudgereportfeed`): `description` is pagina-HTML (Patreon, andere sites, feedpress-GIF), niet de artikeltekst. Matching op die kolom groepeert dan alle Drudge-items op de boilerplate
 - The Nation (`thenation.com/feed/`): `description` is layout-HTML plus “appeared first on The Nation”, eveneens onbruikbaar voor matching
-- HuffPost, The Guardian, Reuters, The Economist, New York Post, The Times (UK), MSNBC, Breitbart: nog niet bevestigd werkend
+- HuffPost, Reuters, The Economist, The Times (UK), MSNBC, Breitbart: nog niet bevestigd werkend
 
-Er is nu geen bron met oriëntatie `left` en geen `right-center`. Hill is neutral, NYT en Washington Post zijn left-center, Daily Signal en Fox zijn right. Dat is een gat in het spectrum. Bouwblok 4 en 5 kunnen daardoor minder “links versus rechts” laten zien.
+Er is geen bron met oriëntatie `left`. `right-center` is de New York Post. Neutral zijn The Hill, Sky News en France 24. Right zijn The Daily Signal, Washington Examiner en Fox News. De overige bronnen in de seeder zijn `left-center`. Zonder een `left`-bron blijft het spectrum scheef, en bouwblok 4 en 5 laten daardoor minder “links versus rechts” zien.
+
+Van The Daily Signal en The Washington Post is gecontroleerd dat `description` echte artikeltekst is. Van de later toegevoegde wereldwijde en lokale feeds is die controle nog niet overal gedaan.
 
 Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items openen, niet alleen de titel of de HTTP-status.
 
@@ -53,11 +80,12 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - Status 200 zegt niets over of de feed actueel is. Altijd publicatiedatums controleren.
 - Status 200 zegt ook niets over de inhoud van `description`. Die kan HTML-layout zijn in plaats van artikeltekst. `strip_tags` haalt tags weg, niet herhaalde reclamezinnen.
 - Matching gebeurt op `volledige_tekst`, niet op de titel. Koppen over dezelfde gebeurtenis verschillen te sterk per bron. Dat wijkt af van de oorspronkelijke casusformulering (trefwoorden in de titel).
-- Overlapdrempel is 8 trefwoorden, tijdvenster max 3 dagen. Twee gedeelde woorden was te streng op titels en te los op omschrijvingen.
+- Overlapdrempel is 7 trefwoorden (`$minimaleOverlap` in `GebeurtenisMatcher`), tijdvenster max 3 dagen. Twee gedeelde woorden was te streng op titels en te los op omschrijvingen.
 - Trefwoordmatching blijft simpel: de eerste kandidaat die de drempel haalt wint. Daardoor kan een artikel in een groep belanden via ketting-matching, zonder dat het over hetzelfde nieuwsfeit gaat. Voorbeeld: in een SCOTUS-groep over third-country deportations zat ook een artikel over student loans, via gedeelde woorden als Trump of administration.
 - Artikelen worden alleen bij het ophalen of bij een handmatige `koppel()`-run gematcht. Na een wijziging in de matcher: `gebeurtenis_id` leegmaken, `gebeurtenissen` legen, opnieuw koppelen.
 - De oriëntatie komt van een dataset en is een generalisatie per bron, niet per artikel.
 - De AI (bouwblok 4 en 5) kan zelf ook vooringenomen zijn.
+- `samenvattingen:genereren` doet één poging per gebeurtenis. Ongeldige JSON of een LLM die langer duurt dan `Http::timeout(60)` stopt het command. Maximaal 3 pogingen per gebeurtenis staat nog open.
 
 ## Status en to-do
 
@@ -98,7 +126,7 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - [x] HTML uit de tekst strippen voor de trefwoorden
 - [x] Gebeurtenis krijgt als `onderwerp` de titel van het eerste artikel
 - [x] Groepering binnen max 3 dagen
-- [x] Drempel: minstens 6 gedeelde trefwoorden
+- [x] Drempel: minstens 7 gedeelde trefwoorden (`$minimaleOverlap`)
 - [x] Nieuwe gebeurtenis aanmaken als er geen match is
 - [x] `gebeurtenis_id` op het artikel updaten
 - [x] Getest met artikelen over hetzelfde feit bij meerdere bronnen (SCOTUS third-country deportations)
@@ -127,4 +155,7 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 ### Nog open, ongeacht bouwblok
 - [ ] Een werkende bron met oriëntatie `left` vinden, zodat het spectrum weer klopt
 - [ ] Overwegen of de volledige artikeltekst gescraped moet worden naast de RSS-samenvatting
-- [ ] Eventueel een `right-center` bron zoeken als vervanging van Drudge
+- [ ] `volledige_tekst` van de later toegevoegde wereldwijde en lokale feeds controleren, niet alleen de titel of status 200
+- [ ] Prompt caching
+- [ ] JSON-format best practices in de samenvattingsprompt
+- [ ] `samenvattingen:genereren` maximaal 3 pogingen per gebeurtenis laten doen als de JSON ongeldig is of de LLM te lang duurt. Nu is het één poging, en een mislukte aanroep stopt het command
