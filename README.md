@@ -13,7 +13,7 @@ AI-ondersteund systeem dat nieuwsartikelen over dezelfde gebeurtenis uit meerder
 4. `php artisan key:generate`
 5. Database `medialens` aanmaken in phpMyAdmin
 6. `php artisan migrate:fresh --seed`
-7. `php artisan artikelen:ophalen` om artikelen binnen te halen en te groeperen
+7. `php artisan artikelen:ophalen` om artikelen binnen te halen en te groeperen. Per bron eerst `Ophalen bij …`, daarna één regel: hoeveel nieuwe artikelen, hoeveel daarvan een nieuwe gebeurtenis openden, en hoeveel aan een bestaande gebeurtenis gekoppeld zijn. Een URL die al in de database staat telt niet mee.
 8. `php artisan samenvattingen:genereren` voor alle gebeurtenissen, of `php artisan samenvattingen:genereren 5` voor één id
 9. Controleren in de Artisan-output en in phpMyAdmin (`artikelen`, `gebeurtenissen`, `samenvattingen`)
 
@@ -85,7 +85,7 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - Artikelen worden alleen bij het ophalen of bij een handmatige `koppel()`-run gematcht. Na een wijziging in de matcher: `gebeurtenis_id` leegmaken, `gebeurtenissen` legen, opnieuw koppelen.
 - De oriëntatie komt van een dataset en is een generalisatie per bron, niet per artikel.
 - De AI (bouwblok 4 en 5) kan zelf ook vooringenomen zijn.
-- `samenvattingen:genereren` doet één poging per gebeurtenis. Ongeldige JSON of een LLM die langer duurt dan `Http::timeout(60)` stopt het command. Maximaal 3 pogingen per gebeurtenis staat nog open.
+- `samenvattingen:genereren` probeert een gebeurtenis maximaal 3 keer. Ongeldige JSON gooit een `RuntimeException` in `slaOp()`, vóór `create()` of `update()`. Een LLM die langer duurt dan `Http::timeout(60)` gooit een `ConnectionException`. Na 3 mislukte pogingen slaat het command die gebeurtenis over en gaat verder. Een andere exception stopt het command nog wel. Elke timeout-poging kan 60 seconden duren.
 
 ## Status en to-do
 
@@ -117,6 +117,7 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - [x] Foutafhandeling bij geen verbinding (`ConnectionException`)
 - [x] Foutafhandeling bij 4xx/5xx (`failed()`)
 - [x] Foutafhandeling bij kapotte of lege XML bij status 200
+- [x] Per bron één totaalregel in plaats van een regel per artikel: nieuwe artikelen, nieuwe gebeurtenissen, gekoppeld aan een bestaande gebeurtenis
 
 ### Bouwblok 3: Gebeurtenissen groeperen
 - [x] Service-klasse `app/Services/GebeurtenisMatcher.php`
@@ -132,6 +133,7 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - [x] Getest met artikelen over hetzelfde feit bij meerdere bronnen (SCOTUS third-country deportations)
 - [x] Getest dat duidelijk andere onderwerpen meestal niet bij elkaar horen
 - [x] Resultaat gecontroleerd in phpMyAdmin
+- [x] `koppel()` geeft `'nieuw'`, `'bestaand'` of `'overgeslagen'` terug, zodat het command kan tellen. Geen `echo` meer in de service
 
 ### Bouwblok 4: Artikelen vergelijken
 - [x] AI-integratie opzetten (API key, configuratie in `.env`)
@@ -151,6 +153,7 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - [x] Alleen samenvatten als er nog geen samenvatting is, of als er nieuwe artikelen bij zijn gekomen
 - [x] Testen of de samenvatting daadwerkelijk neutraal aanvoelt en geen belangrijk verschil mist
 - [x] Testen of de tekst begrijpelijk is voor een breed publiek, zoals de casus vraagt
+- [x] Maximaal 3 pogingen per gebeurtenis bij ongeldige JSON of een timeout, daarna die gebeurtenis overslaan en doorgaan
 
 ### Nog open, ongeacht bouwblok
 - [ ] Een werkende bron met oriëntatie `left` vinden, zodat het spectrum weer klopt
@@ -158,5 +161,3 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - [x] `volledige_tekst` van de later toegevoegde wereldwijde en lokale feeds controleren, niet alleen de titel of status 200
 - [ ] Prompt caching
 - [ ] JSON-format best practices in de samenvattingsprompt
-- [x] `samenvattingen:genereren` maximaal 3 pogingen per gebeurtenis laten doen als de JSON ongeldig is of de LLM te lang duurt. Nu is het één poging, en een mislukte aanroep stopt het command
-- [x] output aanpassen Artikelen:ophalen
