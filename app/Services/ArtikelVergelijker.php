@@ -63,29 +63,47 @@ class ArtikelVergelijker
 
     public function slaOp(Gebeurtenis $gebeurtenis): ?Samenvatting
     {
+
         $samenvatting = $gebeurtenis->samenvatting;
+
         $aantal = $gebeurtenis->artikelen()->count();
 
+        // Stop als er te weinig artikelen zijn
         if ($aantal < $this->minimaleArtikelen) {
             return $samenvatting;
         }
 
+        // Stop als er geen nieuwe artikelen zijn
         if ($samenvatting && !$this->heeftNieuweArtikelen($gebeurtenis, $samenvatting)) {
             return $samenvatting;
         }
 
+        // Genereer de samenvatting
         $data = $this->samenvat($gebeurtenis);
-        $data['gebeurtenis_id'] = $gebeurtenis->id;
         
+        // Controleer of de JSON geldig is
+        // Stop als er een veld ontbreekt
+        foreach (['kernfeiten', 'betrokkenen', 'overeenstemming', 'verschil'] as $veld) {
+            if (!isset($data[$veld]) || trim((string) $data[$veld]) === '') {
+                throw new \RuntimeException("Ongeldige JSON van het model: veld {$veld} ontbreekt.");
+            }
+        }
+
+        // Voeg de gebeurtenis_id toe aan de data
+        $data['gebeurtenis_id'] = $gebeurtenis->id;
+
+        // Update of create de samenvatting
         if ($samenvatting) {
             $samenvatting->update($data);
             return $samenvatting;
         }
         return Samenvatting::create($data);
     }
+
+    // Check of er nieuwe artikelen zijn
     private function heeftNieuweArtikelen(Gebeurtenis $gebeurtenis, Samenvatting $samenvatting): bool
     {
-        $nieuwste = $gebeurtenis->artikelen()->max('created_at');
-        return $nieuwste > $samenvatting->updated_at;
+        $nieuwste = $gebeurtenis->artikelen()->max('created_at'); // Nieuwste artikel
+        return $nieuwste > $samenvatting->updated_at; // Nieuwste artikel is later dan de samenvatting
     }
 }

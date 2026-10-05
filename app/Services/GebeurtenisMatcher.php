@@ -25,10 +25,10 @@ class GebeurtenisMatcher
     private int $maxDagen = 3;
 
     // koppel de artikel aan een gebeurtenis
-    public function koppel(Artikel $artikel): void
+    public function koppel(Artikel $artikel): string
     {
         if ($artikel->gebeurtenis_id !== null) { // <--- artikel is al gekoppeld aan een gebeurtenis
-            return;
+            return 'overgeslagen';
         }
 
         $vanaf = Carbon::parse($artikel->publicatiedatum)->subDays($this->maxDagen)->toDateString();
@@ -47,9 +47,7 @@ class GebeurtenisMatcher
                 $artikel->update([
                     'gebeurtenis_id' => $kandidaat->gebeurtenis_id, // <--- artikel gekoppeld aan gebeurtenis
                 ]);
-
-                echo "Match: \"{$artikel->titel}\" -> gebeurtenis {$kandidaat->gebeurtenis_id}\n";
-                return;
+                return 'bestaand';
             }
         }
 
@@ -61,8 +59,9 @@ class GebeurtenisMatcher
             'gebeurtenis_id' => $gebeurtenis->id, // <--- artikel gekoppeld aan gebeurtenis
         ]);
 
-        echo "Nieuwe gebeurtenis: {$gebeurtenis->id}: \"{$gebeurtenis->onderwerp}\"\n";
+        return 'nieuw';
     }
+
 
     // trefwoorden uit de titel halen
     public function trefwoorden(string $titel): array
@@ -95,16 +94,3 @@ class GebeurtenisMatcher
         return count($this->overlap($titelA, $titelB)) >= $this->minimaleOverlap;
     }
 }
-
-
-// php Artisan Tinker
-
-// $m->zelfdeGebeurtenis(
-//     "Trump Signs New Tariff Bill After Senate Vote",
-//     "Senate Passes Trump Tariff Bill, Democrats Object"
-// );
-
-// $m->zelfdeGebeurtenis(
-//     "Trump Signs New Tariff Bill After Senate Vote",
-//     "Ukraine Peace Talks Stall in Istanbul"
-// );

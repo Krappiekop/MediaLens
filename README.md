@@ -155,7 +155,8 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 ### Nog open, ongeacht bouwblok
 - [ ] Een werkende bron met oriëntatie `left` vinden, zodat het spectrum weer klopt
 - [ ] Overwegen of de volledige artikeltekst gescraped moet worden naast de RSS-samenvatting
-- [ ] `volledige_tekst` van de later toegevoegde wereldwijde en lokale feeds controleren, niet alleen de titel of status 200
+- [x] `volledige_tekst` van de later toegevoegde wereldwijde en lokale feeds controleren, niet alleen de titel of status 200
 - [ ] Prompt caching
 - [ ] JSON-format best practices in de samenvattingsprompt
-- [ ] `samenvattingen:genereren` maximaal 3 pogingen per gebeurtenis laten doen als de JSON ongeldig is of de LLM te lang duurt. Nu is het één poging, en een mislukte aanroep stopt het command
+- [x] `samenvattingen:genereren` maximaal 3 pogingen per gebeurtenis laten doen als de JSON ongeldig is of de LLM te lang duurt. Nu is het één poging, en een mislukte aanroep stopt het command
+- [x] output aanpassen Artikelen:ophalen
