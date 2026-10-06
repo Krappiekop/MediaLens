@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Log;
 
 class LiteLlm
 {
-    public function vraag(?string $systeem = null, string $bericht, ?array $responseFormat = null): string
+    public function vraag(string $systeem, string $bericht, ?array $responseFormat = null, ?int $gebeurtenisId = null): string
     {
         // Maak de messages array
         $messages = [];
@@ -44,16 +44,33 @@ class LiteLlm
         }
 
         // Haal de prompt cache op
-        $cached = $response->json('usage.prompt_tokens_details.cached_tokens');
+        $promptTokens = (int) $response->json('usage.prompt_tokens');
+        $completionTokens = (int) $response->json('usage.completion_tokens');
+        $cachedTokens = (int) $response->json('usage.prompt_tokens_details.cached_tokens');
 
-        // Log de prompt cache
-        Log::info('prompt cache', [
-            'cached_tokens' => $cached,
+        // Bereken het aantal verse input tokens
+        $verseInput = max(0, $promptTokens - $cachedTokens);
+
+        // Bereken de kosten
+        $kostenInput = ($verseInput / 1_000_000) * config('services.litellm.price_input');
+        $kostenCached = ($cachedTokens / 1_000_000) * config('services.litellm.price_cached');
+        $kostenOutput = ($completionTokens / 1_000_000) * config('services.litellm.price_output');
+
+        // Log de LLM usage
+        Log::info('llm usage', [
+            'gebeurtenis_id' => $gebeurtenisId,
+            'prompt_tokens' => $promptTokens,
+            'completion_tokens' => $completionTokens,
+            'cached_tokens' => $cachedTokens,
+            'kosten_input' => round($kostenInput, 6),
+            'kosten_output' => round($kostenOutput, 6),
+            'kosten_cached' => round($kostenCached, 6),
+            'kosten_totaal' => round($kostenInput + $kostenCached + $kostenOutput, 6),
         ]);
-        
+
         // Geef het antwoord terug
         return (string) $response->json('choices.0.message.content');
-        
-        
+
+
     }
 }

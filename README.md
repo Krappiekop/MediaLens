@@ -172,6 +172,7 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - [x] `volledige_tekst` van de later toegevoegde wereldwijde en lokale feeds controleren, niet alleen de titel of status 200
 - [x] Prompt caching
 - [x] JSON-format best practices in de samenvattingsprompt
+- [x] Input en output token loggen.
 
 ### Bouwblok 6: Overzicht van gebeurtenissen
 - [ ] Route `/gebeurtenissen` in `routes/web.php`, in plaats van de standaard welkomstpagina op `/`

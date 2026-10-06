@@ -39,6 +39,9 @@ return [
         'base_url' => env('LITELLM_BASE_URL'),
         'api_key' => env('LITELLM_API_KEY'),
         'model' => env('LITELLM_MODEL'),
+        'price_input' => (float) env('LITELLM_PRICE_INPUT', 0),
+        'price_output' => (float) env('LITELLM_PRICE_OUTPUT', 0),
+        'price_cached' => (float) env('LITELLM_PRICE_CACHED', 0),
     ],
 
 ];
