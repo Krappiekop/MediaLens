@@ -56,7 +56,7 @@ class ArtikelVergelijker
             . "Noem bij de overeenstemming en verschil de namen van de bronnen.";
 
         // Vraag de AI om een samenvatting te genereren met een JSON schema
-        $antwoord = (new LiteLlm)->vraag($artikelen, [
+        $antwoord = (new LiteLlm)->vraag($systeem, $artikelen, [
             'type' => 'json_schema',
             'json_schema' => [
                 'name' => 'samenvatting',
@@ -73,7 +73,7 @@ class ArtikelVergelijker
                     'additionalProperties' => false,
                 ],
             ],
-        ], $systeem); 
+        ]); 
 
         // Controleer of het antwoord een geldige JSON is
         $data = json_decode($antwoord, true);

@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Log;
 
 class LiteLlm
 {
-    public function vraag(string $bericht, ?array $responseFormat = null, ?string $systeem = null): string
+    public function vraag(?string $systeem = null, string $bericht, ?array $responseFormat = null): string
     {
         // Maak de messages array
         $messages = [];
