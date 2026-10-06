@@ -117,6 +117,7 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - [x] Relaties op de models: hasMany, belongsTo, hasOne
 - [x] `$fillable` op elk model dat via `create()` of `update()` gevuld wordt
 - [x] BronSeeder met bronnen, oriëntatie en feed-URL
+- [x] Bron met oriëntatie `left`: The Nation in de seeder (`thenation.com/feed/?post_type=article`)
 - [x] Getest met `migrate:fresh --seed`
 
 ### Bouwblok 2: Artikelen verzamelen
@@ -134,6 +135,7 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - [x] Foutafhandeling bij kapotte of lege XML bij status 200
 - [x] Per bron één totaalregel in plaats van een regel per artikel: nieuwe artikelen, nieuwe gebeurtenissen, gekoppeld aan een bestaande gebeurtenis
 - [x] `description` opschonen vóór opslaan: HTML-tags naar spaties, witruimte plat, `Continue reading...` eraf
+- [x] `volledige_tekst` van de later toegevoegde wereldwijde en lokale feeds controleren, niet alleen de titel of status 200
 
 ### Bouwblok 3: Gebeurtenissen groeperen
 - [x] Service-klasse `app/Services/GebeurtenisMatcher.php`
@@ -170,13 +172,9 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - [x] Testen of de samenvatting daadwerkelijk neutraal aanvoelt en geen belangrijk verschil mist
 - [x] Testen of de tekst begrijpelijk is voor een breed publiek, zoals de casus vraagt
 - [x] Maximaal 3 pogingen per gebeurtenis bij ongeldige JSON of een timeout, daarna die gebeurtenis overslaan en doorgaan
-
-### Nog open, ongeacht bouwblok
-- [x] Bron met oriëntatie `left`: The Nation terug in de seeder (`thenation.com/feed/?post_type=article`)
-- [x] `volledige_tekst` van de later toegevoegde wereldwijde en lokale feeds controleren, niet alleen de titel of status 200
-- [x] Prompt caching
-- [x] JSON-format best practices in de samenvattingsprompt
-- [x] Input en output token loggen.
+- [x] JSON-format best practices in de samenvattingsprompt (`json_schema`)
+- [x] Prompt caching (vast system-bericht vooraan, artikelen in het user-bericht; `cached_tokens` in de log)
+- [x] Input- en outputtokens loggen, plus een kostenschatting uit `.env`
 
 ### Bouwblok 6: Overzicht van gebeurtenissen
 - [ ] Route `/gebeurtenissen` in `routes/web.php`, in plaats van de standaard welkomstpagina op `/`
