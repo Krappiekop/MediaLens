@@ -13,20 +13,24 @@ class SamenvattingenGenereren extends Command
     protected $description = 'Genereert samenvattingen voor gebeurtenissen met minstens twee artikelen.';
     public function handle()
     {
+        // Maak een nieuwe instantie van de ArtikelVergelijker
         $vergelijker = new ArtikelVergelijker();
         $id = $this->argument('gebeurtenis');
 
+        // Haal de gebeurtenissen op, of alleen de gebeurtenis met het opgegeven ID
         $gebeurtenissen = $id
             ? Gebeurtenis::where('id', $id)->get()
             : Gebeurtenis::all();
 
+        // Controleer of er gebeurtenissen gevonden zijn
         if ($gebeurtenissen->isEmpty()) {
             $this->error('Geen gebeurtenis gevonden.');
             return;
         }
 
+        // Loop door alle gebeurtenissen
         foreach ($gebeurtenissen as $gebeurtenis) {
-
+            // Haal de bestaande samenvatting op
             $bestaande = $gebeurtenis->samenvatting;
 
             $oudUpdated = $bestaande?->updated_at?->toDateTimeString(); // Tijdstip van de laatste update van de bestaande samenvatting

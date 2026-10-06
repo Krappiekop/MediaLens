@@ -45,25 +45,45 @@ class ArtikelVergelijker
 
     public function samenvat(Gebeurtenis $gebeurtenis): array
     {
+        // Haal de artikelen tekst op
         $artikelen = $this->artikelenTekst($gebeurtenis);
 
-        $prompt = "Hieronder staan nieuwsartikelen over dezelfde gebeurtenis.\n\n"
+        // Maak het systeem bericht
+        $systeem = "Hieronder volgen nieuwsartikelen over dezelfde gebeurtenis.\n\n"
             . "Schrijf een neutrale samenvatting die begrijpelijk is voor een breed publiek.\n"
             . "Gebruik geen politieke labels en kies geen partij.\n"
-            . "Noem bij de overeenstemming en verschil de namen van de bronnen.\n\n"
-            . "Antwoord alleen met geldige JSON, zonder markdown, met precies deze keys:\n"
-            . '{"kernfeiten":"","betrokkenen":"","overeenstemming":"","verschil":""}'
-            . "\n\nArtikelen:\n\n"
-            . $artikelen;
+            . "Schrijf in het Nederlands.\n"
+            . "Noem bij de overeenstemming en verschil de namen van de bronnen.";
 
-        $antwoord = (new LiteLlm)->vraag($prompt);
+        // Vraag de AI om een samenvatting te genereren met een JSON schema
+        $antwoord = (new LiteLlm)->vraag($artikelen, [
+            'type' => 'json_schema',
+            'json_schema' => [
+                'name' => 'samenvatting',
+                'strict' => true,
+                'schema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'kernfeiten' => ['type' => 'string'],
+                        'betrokkenen' => ['type' => 'string'],
+                        'overeenstemming' => ['type' => 'string'],
+                        'verschil' => ['type' => 'string'],
+                    ],
+                    'required' => ['kernfeiten', 'betrokkenen', 'overeenstemming', 'verschil'],
+                    'additionalProperties' => false,
+                ],
+            ],
+        ], $systeem); 
+
+        // Controleer of het antwoord een geldige JSON is
         $data = json_decode($antwoord, true);
+
+        // Geef het antwoord terug
         return is_array($data) ? $data : [];
     }
 
     public function slaOp(Gebeurtenis $gebeurtenis): ?Samenvatting
     {
-
         $samenvatting = $gebeurtenis->samenvatting;
 
         $aantal = $gebeurtenis->artikelen()->count();
@@ -80,7 +100,7 @@ class ArtikelVergelijker
 
         // Genereer de samenvatting
         $data = $this->samenvat($gebeurtenis);
-        
+
         // Controleer of de JSON geldig is
         // Stop als er een veld ontbreekt
         foreach (['kernfeiten', 'betrokkenen', 'overeenstemming', 'verschil'] as $veld) {

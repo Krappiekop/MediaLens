@@ -69,23 +69,35 @@ Onbruikbaar gebleken, niet gebruiken:
 - The Nation (`thenation.com/feed/`): `description` is layout-HTML plus “appeared first on The Nation”, eveneens onbruikbaar voor matching
 - HuffPost, Reuters, The Economist, The Times (UK), MSNBC, Breitbart: nog niet bevestigd werkend
 
-Er is geen bron met oriëntatie `left`. `right-center` is de New York Post. Neutral zijn The Hill, Sky News en France 24. Right zijn The Daily Signal, Washington Examiner en Fox News. De overige bronnen in de seeder zijn `left-center`. Zonder een `left`-bron blijft het spectrum scheef, en bouwblok 4 en 5 laten daardoor minder “links versus rechts” zien.
+Er is geen bron met oriëntatie `left`. `right-center` is de New York Post. Neutral zijn The Hill, Sky News en France 24. Right zijn The Daily Signal, Washington Examiner en Fox News. De overige bronnen in de seeder zijn `left-center`.
 
-Van The Daily Signal en The Washington Post is gecontroleerd dat `description` echte artikeltekst is. Van de later toegevoegde wereldwijde en lokale feeds is die controle nog niet overal gedaan.
+Van The Daily Signal, The Washington Post en de later toegevoegde wereldwijde en lokale feeds is gecontroleerd dat `description` echte artikeltekst is.
 
 Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items openen, niet alleen de titel of de HTTP-status.
 
 ## Bekende beperkingen
+
+### Feeds
 - Een RSS-feed levert meestal alleen titel en een korte samenvatting, niet de volledige artikeltekst. De kolom `volledige_tekst` is dus de RSS-omschrijving.
 - Status 200 zegt niets over of de feed actueel is. Altijd publicatiedatums controleren.
 - Status 200 zegt ook niets over de inhoud van `description`. Die kan HTML-layout zijn in plaats van artikeltekst. `strip_tags` haalt tags weg, niet herhaalde reclamezinnen.
+
+### Groeperen
 - Matching gebeurt op `volledige_tekst`, niet op de titel. Koppen over dezelfde gebeurtenis verschillen te sterk per bron. Dat wijkt af van de oorspronkelijke casusformulering (trefwoorden in de titel).
 - Overlapdrempel is 7 trefwoorden (`$minimaleOverlap` in `GebeurtenisMatcher`), tijdvenster max 3 dagen. Twee gedeelde woorden was te streng op titels en te los op omschrijvingen.
 - Trefwoordmatching blijft simpel: de eerste kandidaat die de drempel haalt wint. Daardoor kan een artikel in een groep belanden via ketting-matching, zonder dat het over hetzelfde nieuwsfeit gaat. Voorbeeld: in een SCOTUS-groep over third-country deportations zat ook een artikel over student loans, via gedeelde woorden als Trump of administration.
 - Artikelen worden alleen bij het ophalen of bij een handmatige `koppel()`-run gematcht. Na een wijziging in de matcher: `gebeurtenis_id` leegmaken, `gebeurtenissen` legen, opnieuw koppelen.
+
+### Oriëntatie
 - De oriëntatie komt van een dataset en is een generalisatie per bron, niet per artikel.
-- De AI (bouwblok 4 en 5) kan zelf ook vooringenomen zijn.
+- Er is geen bron met oriëntatie `left`. Het spectrum blijft daardoor scheef, en bouwblok 4 en 5 laten minder “links versus rechts” zien.
+
+### Samenvatting
+- De AI kan zelf ook vooringenomen zijn.
+- `samenvat()` stuurt een `json_schema` mee met de vier verplichte string-velden. Een lege string voldoet aan dat schema. `slaOp()` weigert een leeg veld alsnog, en het command probeert die gebeurtenis opnieuw.
 - `samenvattingen:genereren` probeert een gebeurtenis maximaal 3 keer. Ongeldige JSON gooit een `RuntimeException` in `slaOp()`, vóór `create()` of `update()`. Een LLM die langer duurt dan `Http::timeout(60)` gooit een `ConnectionException`. Na 3 mislukte pogingen slaat het command die gebeurtenis over en gaat verder. Een andere exception stopt het command nog wel. Elke timeout-poging kan 60 seconden duren.
+- Bij een HTTP-fout geeft `LiteLlm::vraag()` een lege string terug. Het command meldt dan een ontbrekend veld. De statuscode van de proxy staat daar niet bij.
+- Prompt caching bij DeepSeek is automatisch. Het vaste system-bericht staat vooraan, de artikelen in het user-bericht. `cached_tokens` wordt gelogd in `storage/logs/laravel.log`. Een hit zie je vooral als dezelfde prompt terugkomt, zoals een retry of dezelfde gebeurtenis opnieuw samenvatten. Verschillende gebeurtenissen blijven meestal op `0`, omdat hun artikeltekst meteen afwijkt. `migrate:fresh` leegt alleen de database, niet de cache bij de provider.
 
 ## Status en to-do
 
@@ -157,7 +169,29 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 
 ### Nog open, ongeacht bouwblok
 - [ ] Een werkende bron met oriëntatie `left` vinden, zodat het spectrum weer klopt
-- [ ] Overwegen of de volledige artikeltekst gescraped moet worden naast de RSS-samenvatting
 - [x] `volledige_tekst` van de later toegevoegde wereldwijde en lokale feeds controleren, niet alleen de titel of status 200
-- [ ] Prompt caching
-- [ ] JSON-format best practices in de samenvattingsprompt
+- [x] Prompt caching
+- [x] JSON-format best practices in de samenvattingsprompt
+
+### Bouwblok 6: Overzicht van gebeurtenissen
+- [ ] Route `/gebeurtenissen` in `routes/web.php`, in plaats van de standaard welkomstpagina op `/`
+- [ ] Controller `app/Http/Controllers/GebeurtenisController.php` (Laravel-conventie: een pagina hoort in een controller, niet in een closure)
+- [ ] `index`-methode die gebeurtenissen ophaalt, met het aantal artikelen en of er een samenvatting is
+- [ ] Blade-view `resources/views/gebeurtenissen/index.blade.php`
+- [ ] Per gebeurtenis: onderwerp, aantal artikelen, en of er al een samenvatting is
+- [ ] Gebeurtenissen zonder samenvatting blijven zichtbaar
+- [ ] Getest in de browser: de lijst komt overeen met de tabel `gebeurtenissen` in phpMyAdmin
+
+### Bouwblok 7: Detailpagina van één gebeurtenis
+- [ ] Route `/gebeurtenissen/{gebeurtenis}` naar een `show`-methode op dezelfde controller
+- [ ] Route model binding: Laravel zoekt de `Gebeurtenis` zelf op via het id in de URL
+- [ ] Blade-view `resources/views/gebeurtenissen/show.blade.php`
+- [ ] Samenvatting tonen in de vier velden: kernfeiten, betrokkenen, overeenstemming, verschil
+- [ ] Duidelijke lege staat als deze gebeurtenis nog geen samenvatting heeft
+- [ ] Artikelen ophalen inclusief bron, via de relatie `artikelen.bron`
+- [ ] Artikelen groeperen op `orientatie` van de bron
+- [ ] Oriëntatie tonen zoals die in de database staat (`left-center`, `neutral`, `right-center`, `right`). Bundelen naar links, midden en rechts is alleen weergave, de opgeslagen waarde blijft de Media Bias Fact Check-label
+- [ ] Per artikel: titel, bronnaam en link naar de originele URL
+- [ ] Vanaf het overzicht linkt elk onderwerp naar deze pagina
+- [ ] Getest met een gebeurtenis die een samenvatting én artikelen van meerdere bronnen heeft
+- [ ] Getest met een gebeurtenis zonder samenvatting

@@ -12,13 +12,14 @@ class BronSeeder extends Seeder
 {
     Bron::insert([
         // --- Politiek (VS) ---
+        // ['naam' => 'The Nation', 'orientatie' => 'left', 'feed_url' => 'https://www.thenation.com/feed/?post_type=article'], // VS - politiek
         ['naam' => 'The New York Times: Politics', 'orientatie' => 'left-center', 'feed_url' => 'https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml'], // VS - politiek
         ['naam' => 'The Washington Post: Politics', 'orientatie' => 'left-center', 'feed_url' => 'https://feeds.washingtonpost.com/rss/politics'], // VS - politiek
         ['naam' => 'The Hill', 'orientatie' => 'neutral', 'feed_url' => 'https://thehill.com/news/feed/'], // VS - politiek
         ['naam' => 'The Daily Signal', 'orientatie' => 'right', 'feed_url' => 'https://www.dailysignal.com/feed/'], // VS - politiek
         ['naam' => 'Washington Examiner', 'orientatie' => 'right', 'feed_url' => 'https://www.washingtonexaminer.com/feed/'], // VS - politiek
         ['naam' => 'Fox News: Politics', 'orientatie' => 'right', 'feed_url' => 'https://moxie.foxnews.com/google-publisher/politics.xml'], // VS - politiek
-
+        
         // --- Wereldwijd ---
         ['naam' => 'BBC News: World', 'orientatie' => 'left-center', 'feed_url' => 'https://feeds.bbci.co.uk/news/world/rss.xml'], // VK - wereldwijd
         ['naam' => 'The Guardian: World', 'orientatie' => 'left-center', 'feed_url' => 'https://www.theguardian.com/world/rss'], // VK - wereldwijd
