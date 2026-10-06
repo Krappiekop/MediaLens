@@ -176,6 +176,8 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - [x] Prompt caching (vast system-bericht vooraan, artikelen in het user-bericht; `cached_tokens` in de log)
 - [x] Input- en outputtokens loggen, plus een kostenschatting uit `.env`
 
+- [ ] parameter testing van deepseek model
+
 ### Bouwblok 6: Overzicht van gebeurtenissen
 - [ ] Route `/gebeurtenissen` in `routes/web.php`, in plaats van de standaard welkomstpagina op `/`
 - [ ] Controller `app/Http/Controllers/GebeurtenisController.php` (Laravel-conventie: een pagina hoort in een controller, niet in een closure)
