@@ -9,16 +9,45 @@ class GebeurtenisMatcher
 {
     // stopwoorden die niet meegehaald worden in de trefwoorden
     private array $stopwoorden = [
-        'a', 'an', 'and', 'as', 'at', 'be',
-        'by', 'for', 'from', 'in', 'is',
-        'it', 'its', 'of', 'on', 'or', 's', 
-        'says', 'the', 'this', 'to', 'with',
+        'a',
+        'an',
+        'and',
+        'as',
+        'at',
+        'be',
+        'by',
+        'for',
+        'from',
+        'in',
+        'is',
+        'it',
+        'its',
+        'of',
+        'on',
+        'or',
+        's',
+        'says',
+        'the',
+        'this',
+        'to',
+        'with',
     ];
 
     private function vergelijkTekst(Artikel $artikel): string
     {
+        // tekst van het artikel
         $tekst = trim(strip_tags((string) $artikel->volledige_tekst));
-        return $tekst !== '' ? $artikel->volledige_tekst : $artikel->titel;
+
+        // als de tekst leeg is, dan gebruik de titel
+        if ($tekst === '') {
+            return $artikel->titel;
+        }
+
+        // woorden uit de tekst halen
+        $woorden = preg_split('/\s+/', $tekst, -1, PREG_SPLIT_NO_EMPTY);
+        // de eerste 40 woorden nemen
+
+        return implode(' ', array_slice($woorden, 0, 40));
     }
 
     private int $minimaleOverlap = 7;                               // <--- minimale hoeveelheid trefwoorden die in beide teksten moeten voorkomen om een match te hebben (default 2)
@@ -40,10 +69,12 @@ class GebeurtenisMatcher
             ->get();
 
         foreach ($kandidaten as $kandidaat) {
-            if ($this->zelfdeGebeurtenis(
-                $this->vergelijkTekst($artikel), 
-                $this->vergelijkTekst($kandidaat)
-                )) { // <--- vergelijk de tekst van het artikel en de kandidaat
+            if (
+                $this->zelfdeGebeurtenis(
+                    $this->vergelijkTekst($artikel),
+                    $this->vergelijkTekst($kandidaat)
+                )
+            ) { // <--- vergelijk de tekst van het artikel en de kandidaat
                 $artikel->update([
                     'gebeurtenis_id' => $kandidaat->gebeurtenis_id, // <--- artikel gekoppeld aan gebeurtenis
                 ]);

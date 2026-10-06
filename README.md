@@ -28,6 +28,7 @@ Politiek (VS):
 
 | Bron | Feed URL | Oriëntatie |
 |---|---|---|
+| The Nation | `https://www.thenation.com/feed/?post_type=article` | left |
 | The New York Times: Politics | `https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml` | left-center |
 | The Washington Post: Politics | `https://feeds.washingtonpost.com/rss/politics` | left-center |
 | The Hill | `https://thehill.com/news/feed/` | neutral |
@@ -66,10 +67,11 @@ Onbruikbaar gebleken, niet gebruiken:
 - CNN (`rss.cnn.com/rss/edition.rss`): status 200, maar bevroren data uit 2023
 - The Wall Street Journal: oude `online.wsj.com`-link werkt niet meer
 - Drudge Report (`feedpress.me/drudgereportfeed`): `description` is pagina-HTML (Patreon, andere sites, feedpress-GIF), niet de artikeltekst. Matching op die kolom groepeert dan alle Drudge-items op de boilerplate
-- The Nation (`thenation.com/feed/`): `description` is layout-HTML plus “appeared first on The Nation”, eveneens onbruikbaar voor matching
 - HuffPost, Reuters, The Economist, The Times (UK), MSNBC, Breitbart: nog niet bevestigd werkend
 
-Er is geen bron met oriëntatie `left`. `right-center` is de New York Post. Neutral zijn The Hill, Sky News en France 24. Right zijn The Daily Signal, Washington Examiner en Fox News. De overige bronnen in de seeder zijn `left-center`.
+The Nation stond eerder op die onbruikbaar-lijst (layout-HTML plus “appeared first on The Nation”). De feed is terug in de seeder als enige bron met oriëntatie `left`. `artikelen:ophalen` haalt nu tags, extra witruimte en `Continue reading...` uit `description` voordat de tekst wordt opgeslagen. `volledige_tekst` van Nation-items na het ophalen blijven controleren: `strip_tags` haalt geen herhaalde reclamezin weg.
+
+`right-center` is de New York Post. Neutral zijn The Hill, Sky News en France 24. Right zijn The Daily Signal, Washington Examiner en Fox News. `left` is The Nation. De overige bronnen in de seeder zijn `left-center`.
 
 Van The Daily Signal, The Washington Post en de later toegevoegde wereldwijde en lokale feeds is gecontroleerd dat `description` echte artikeltekst is.
 
@@ -80,17 +82,18 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 ### Feeds
 - Een RSS-feed levert meestal alleen titel en een korte samenvatting, niet de volledige artikeltekst. De kolom `volledige_tekst` is dus de RSS-omschrijving.
 - Status 200 zegt niets over of de feed actueel is. Altijd publicatiedatums controleren.
-- Status 200 zegt ook niets over de inhoud van `description`. Die kan HTML-layout zijn in plaats van artikeltekst. `strip_tags` haalt tags weg, niet herhaalde reclamezinnen.
+- Status 200 zegt ook niets over de inhoud van `description`. Die kan HTML-layout zijn in plaats van artikeltekst. Bij het ophalen gaan tags naar een spatie, witruimte wordt plat, en `Continue reading...` aan het einde eraf. `strip_tags` alleen plakt zinnen aan elkaar en haalt geen reclamezinnen weg.
 
 ### Groeperen
 - Matching gebeurt op `volledige_tekst`, niet op de titel. Koppen over dezelfde gebeurtenis verschillen te sterk per bron. Dat wijkt af van de oorspronkelijke casusformulering (trefwoorden in de titel).
+- Alleen de eerste 40 woorden van die omschrijving tellen mee (`vergelijkTekst()`). De volle tekst blijft in de database voor de AI. Zonder die knip werd drempel 7 vrijwel niets: een Guardian-digest van honderden woorden deelde makkelijk 7 journalistieke woorden met SCMP of NDTV.
 - Overlapdrempel is 7 trefwoorden (`$minimaleOverlap` in `GebeurtenisMatcher`), tijdvenster max 3 dagen. Twee gedeelde woorden was te streng op titels en te los op omschrijvingen.
-- Trefwoordmatching blijft simpel: de eerste kandidaat die de drempel haalt wint. Daardoor kan een artikel in een groep belanden via ketting-matching, zonder dat het over hetzelfde nieuwsfeit gaat. Voorbeeld: in een SCOTUS-groep over third-country deportations zat ook een artikel over student loans, via gedeelde woorden als Trump of administration.
+- Trefwoordmatching blijft simpel: de eerste kandidaat die de drempel haalt wint. Ketting-matching kan nog, maar een digest matcht niet meer op alinea 4. Voorbeeld van vóór de knip: Trump/Iran-stukken plus Guardian First Thing plus SCMP-Hongkong in één groep.
 - Artikelen worden alleen bij het ophalen of bij een handmatige `koppel()`-run gematcht. Na een wijziging in de matcher: `gebeurtenis_id` leegmaken, `gebeurtenissen` legen, opnieuw koppelen.
 
 ### Oriëntatie
 - De oriëntatie komt van een dataset en is een generalisatie per bron, niet per artikel.
-- Er is geen bron met oriëntatie `left`. Het spectrum blijft daardoor scheef, en bouwblok 4 en 5 laten minder “links versus rechts” zien.
+- `left` is The Nation. Het spectrum is daardoor niet meer alleen left-center tot right. De AI krijgt die labels nog steeds niet per artikel in de prompt.
 
 ### Samenvatting
 - De AI kan zelf ook vooringenomen zijn.
@@ -130,12 +133,13 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - [x] Foutafhandeling bij 4xx/5xx (`failed()`)
 - [x] Foutafhandeling bij kapotte of lege XML bij status 200
 - [x] Per bron één totaalregel in plaats van een regel per artikel: nieuwe artikelen, nieuwe gebeurtenissen, gekoppeld aan een bestaande gebeurtenis
+- [x] `description` opschonen vóór opslaan: HTML-tags naar spaties, witruimte plat, `Continue reading...` eraf
 
 ### Bouwblok 3: Gebeurtenissen groeperen
 - [x] Service-klasse `app/Services/GebeurtenisMatcher.php`
 - [x] Aanroepen direct na het opslaan van een nieuw artikel in het command
 - [x] Stopwoorden eruit filteren
-- [x] Matching op overlap in `volledige_tekst` (RSS-omschrijving), niet de titel
+- [x] Matching op overlap in de eerste 40 woorden van `volledige_tekst` (RSS-omschrijving), niet de titel
 - [x] HTML uit de tekst strippen voor de trefwoorden
 - [x] Gebeurtenis krijgt als `onderwerp` de titel van het eerste artikel
 - [x] Groepering binnen max 3 dagen
@@ -168,7 +172,7 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - [x] Maximaal 3 pogingen per gebeurtenis bij ongeldige JSON of een timeout, daarna die gebeurtenis overslaan en doorgaan
 
 ### Nog open, ongeacht bouwblok
-- [ ] Een werkende bron met oriëntatie `left` vinden, zodat het spectrum weer klopt
+- [x] Bron met oriëntatie `left`: The Nation terug in de seeder (`thenation.com/feed/?post_type=article`)
 - [x] `volledige_tekst` van de later toegevoegde wereldwijde en lokale feeds controleren, niet alleen de titel of status 200
 - [x] Prompt caching
 - [x] JSON-format best practices in de samenvattingsprompt
@@ -177,7 +181,7 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 ### Bouwblok 6: Overzicht van gebeurtenissen
 - [ ] Route `/gebeurtenissen` in `routes/web.php`, in plaats van de standaard welkomstpagina op `/`
 - [ ] Controller `app/Http/Controllers/GebeurtenisController.php` (Laravel-conventie: een pagina hoort in een controller, niet in een closure)
-- [ ] `index`-methode die gebeurtenissen ophaalt, met het aantal artikelen en of er een samenvatting is
+- [ ] `index`-methode die gebeurtenissen (met minstens 2 artikelen) ophaalt, met het aantal artikelen en of er een samenvatting is
 - [ ] Blade-view `resources/views/gebeurtenissen/index.blade.php`
 - [ ] Per gebeurtenis: onderwerp, aantal artikelen, en of er al een samenvatting is
 - [ ] Gebeurtenissen zonder samenvatting blijven zichtbaar

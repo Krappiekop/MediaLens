@@ -56,7 +56,19 @@ class ArtikelenOphalen extends Command
                 $titel = (string) $item->title; // titel van het artikel
                 $url = (string) $item->link; // url van het artikel
                 $publicatiedatum = date('Y-m-d', strtotime((string) $item->pubDate)); // publicatiedatum van het artikel
-                $tekst = (string) $item->description; // tekst van het artikel
+
+                // tekst van het artikel
+                $tekst = (string) $item->description;
+                // HTML-entiteiten decoderen
+                $tekst = html_entity_decode($tekst, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                // HTML-tags verwijderen
+                $tekst = preg_replace('/<[^>]+>/', ' ', $tekst);
+                // meerdere spaties vervangen door een enkele spatie
+                $tekst = preg_replace('/\s+/', ' ', $tekst);
+                // "Continue reading..." verwijderen
+                $tekst = preg_replace('/Continue reading\.?\.?\.?\s*$/i', '', $tekst);
+                // spaties aan het begin en einde verwijderen
+                $tekst = trim($tekst);
 
                 if (Artikel::where('url', $url)->exists()) { // als het artikel al bestaat, dan overslaan
                     continue;
