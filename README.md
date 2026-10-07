@@ -1,5 +1,5 @@
 # MediaLens
-AI-ondersteund systeem dat nieuwsartikelen over dezelfde gebeurtenis uit meerdere bronnen verzamelt, elke bron een politieke oriëntatie meegeeft, en een neutrale samenvatting genereert die laat zien waar bronnen van mening verschillen. Backend-only in deze fase, gebouwd in Laravel.
+AI-ondersteund systeem dat nieuwsartikelen over dezelfde gebeurtenis uit meerdere bronnen verzamelt, elke bron een politieke oriëntatie meegeeft, en een neutrale samenvatting genereert die laat zien waar bronnen van mening verschillen. Gebouwd in Laravel. Het overzicht van gebeurtenissen staat in de browser; de detailpagina volgt in bouwblok 7.
 
 ## Tech stack
 - Laravel (laravel/laravel), lokaal via XAMPP
@@ -16,8 +16,9 @@ AI-ondersteund systeem dat nieuwsartikelen over dezelfde gebeurtenis uit meerder
 7. `php artisan artikelen:ophalen` om artikelen binnen te halen en te groeperen. Per bron eerst `Ophalen bij …`, daarna één regel: hoeveel nieuwe artikelen, hoeveel daarvan een nieuwe gebeurtenis openden, en hoeveel aan een bestaande gebeurtenis gekoppeld zijn. Een URL die al in de database staat telt niet mee.
 8. `php artisan samenvattingen:genereren` voor alle gebeurtenissen, of `php artisan samenvattingen:genereren 5` voor één id
 9. Controleren in de Artisan-output en in phpMyAdmin (`artikelen`, `gebeurtenissen`, `samenvattingen`)
+10. `php artisan serve` en open `http://127.0.0.1:8000/` of `http://127.0.0.1:8000/gebeurtenissen`. XAMPP Apache draait PHP 8.2 en start Laravel 13 niet. De CLI-PHP (8.4+) wel. phpMyAdmin via XAMPP blijft werken.
 
-`php artisan serve` laat alleen zien dat Laravel start. Deze fase is backend-only. Of feeds en samenvattingen kloppen, zie je bij stap 7 tot en met 9.
+Of feeds en samenvattingen kloppen, zie je bij stap 7 tot en met 9. Of de lijst klopt, bij stap 10 plus phpMyAdmin (`gebeurtenissen`, `artikelen`, `samenvattingen`).
 
 De database hoeft niet handmatig overgezet te worden tussen machines, migraties en seeders bouwen hem overal identiek op.
 
@@ -103,6 +104,10 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - Prompt caching bij DeepSeek is automatisch. Het vaste system-bericht staat vooraan, de artikelen in het user-bericht. `cached_tokens` wordt gelogd in `storage/logs/laravel.log`. Een hit zie je vooral als dezelfde prompt terugkomt, zoals een retry of dezelfde gebeurtenis opnieuw samenvatten. Verschillende gebeurtenissen blijven meestal op `0`, omdat hun artikeltekst meteen afwijkt. `migrate:fresh` leegt alleen de database, niet de cache bij de provider.
 - `LiteLlm` stuurt `thinking.type`, `reasoning_effort` en `temperature` mee uit `.env`. Lege regels vallen terug op `enabled`, `high` en `1`. Bij thinking aan heeft `temperature` geen effect; `top_p` speelt alleen tussen 0,95 en 1. Effort `max` kan de timeout van 60 seconden raken. Of de Educom-proxy die velden doorgeeft, zie je aan `reasoning_content` of `reasoning_tokens` in de response, niet alleen aan een 200.
 
+### Overzicht
+- De lijst toont alleen gebeurtenissen met minstens 2 artikelen, dezelfde drempel als `samenvattingen:genereren`. Groepen met 1 artikel staan wél in de tabel `gebeurtenissen`, niet op de pagina. Dat wijkt af van een 1-op-1-check tegen de hele tabel.
+- `/` en `/gebeurtenissen` wijzen naar dezelfde `index`. Er is nog geen detailpagina.
+
 ## Status en to-do
 
 ### Basisopzet
@@ -179,13 +184,13 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - [x] LLM-parameters via `.env`: `LITELLM_THINKING_TYPE`, `LITELLM_REASONING_EFFORT`, `LITELLM_TEMPERATURE` (leeg = DeepSeek-standaard)
 
 ### Bouwblok 6: Overzicht van gebeurtenissen
-- [ ] Route `/gebeurtenissen` in `routes/web.php`, in plaats van de standaard welkomstpagina op `/`
-- [ ] Controller `app/Http/Controllers/GebeurtenisController.php` (Laravel-conventie: een pagina hoort in een controller, niet in een closure)
-- [ ] `index`-methode die gebeurtenissen (met minstens 2 artikelen) ophaalt, met het aantal artikelen en of er een samenvatting is
-- [ ] Blade-view `resources/views/gebeurtenissen/index.blade.php`
-- [ ] Per gebeurtenis: onderwerp, aantal artikelen, en of er al een samenvatting is
-- [ ] Gebeurtenissen zonder samenvatting blijven zichtbaar
-- [ ] Getest in de browser: de lijst komt overeen met de tabel `gebeurtenissen` in phpMyAdmin
+- [x] Route `/` en `/gebeurtenissen` in `routes/web.php` naar `GebeurtenisController@index`, in plaats van de standaard welkomstpagina
+- [x] Controller `app/Http/Controllers/GebeurtenisController.php` (Laravel-conventie: een pagina hoort in een controller, niet in een closure)
+- [x] `index`-methode die gebeurtenissen (met minstens 2 artikelen) ophaalt, met het aantal artikelen en of er een samenvatting is
+- [x] Blade-view `resources/views/gebeurtenissen/index.blade.php`
+- [x] Per gebeurtenis: onderwerp, aantal artikelen, en of er al een samenvatting is
+- [x] Gebeurtenissen zonder samenvatting blijven zichtbaar
+- [x] Getest in de browser: onderwerp, artikelcount en wel/geen samenvatting kloppen met phpMyAdmin (alleen groepen met 2+ artikelen)
 
 ### Bouwblok 7: Detailpagina van één gebeurtenis
 - [ ] Route `/gebeurtenissen/{gebeurtenis}` naar een `show`-methode op dezelfde controller

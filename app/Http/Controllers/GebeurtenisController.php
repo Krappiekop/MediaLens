@@ -11,6 +11,7 @@ class GebeurtenisController extends Controller
     {
         $gebeurtenissen = Gebeurtenis::has('artikelen', '>=', 2)
             ->withCount('artikelen')
+            ->withExists('samenvatting')
             ->get();
 
         return view('gebeurtenissen.index', [

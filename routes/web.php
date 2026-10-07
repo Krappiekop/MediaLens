@@ -3,8 +3,5 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GebeurtenisController;
 
-Route::get('/', function () {
-    return view('welcome');
-});
-
+Route::get('/', [GebeurtenisController::class, 'index']);
 Route::get('/gebeurtenissen', [GebeurtenisController::class, 'index']);
