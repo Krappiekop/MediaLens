@@ -212,5 +212,46 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - [x] Getest met een gebeurtenis die een samenvatting én artikelen van meerdere bronnen heeft
 - [x] Getest met een gebeurtenis zonder samenvatting
 
-### Later op terugkomen
-- [ ] ipv zelf steekwoorden kijken naar rake lib
+### Bouwblok 8: Layout en leesbare UI
+- [ ] Blade-layout `resources/views/layouts/app.blade.php` met `@yield` / `@section` (Laravel-conventie; nu twee losse HTML-documenten)
+- [ ] Vite/Tailwind koppelen (`@vite` in de layout); `npm run dev` naast `php artisan serve`
+- [ ] Kop MediaLens, link naar het overzicht, op de detailpagina een terug-link via named route
+- [ ] Typografie: samenvatting als alinea’s (`nl2br` of aparte `<p>`), artikellijst leesbaar op mobiel
+- [ ] Named route voor `index` (nu alleen `gebeurtenissen.show`)
+- [ ] Getest: `/` en `/gebeurtenissen/{id}` delen header/footer; zonder Vite-build geen kapotte pagina (fallback of duidelijke README-stap)
+
+### Bouwblok 9: Spectrum als drie kolommen
+- [ ] Detailpagina: drie kolommen Links / Midden / Rechts (stacked op smal scherm)
+- [ ] Lege kolom: duidelijke lege staat, geen crash
+- [ ] Per artikel: titel, bronnaam, ruwe MBFC-label, link (blijft)
+- [ ] Optioneel op het overzicht: mini-indicatie hoeveel artikelen links/midden/rechts (geen extra AI)
+- [ ] Getest met een groep die niet alle drie de bakjes vult
+
+### Bouwblok 10: Overzicht sorteren en pagineren
+- [ ] Sorteren: nieuwste gebeurtenis eerst (bijv. `updated_at` of max `artikelen.publicatiedatum`)
+- [ ] Laravel `paginate()` in `index()`, links in Blade
+- [ ] Filter: alle / alleen mét samenvatting / alleen zonder (querystring, geen JavaScript-plicht)
+- [ ] Gebeurtenissen met 1 artikel blijven buiten de lijst (zelfde drempel als bouwblok 5/6)
+- [ ] Getest: tweede pagina, filter “zonder samenvatting”, volgorde klopt met phpMyAdmin
+
+### Bouwblok 11: Transparantie (ethiek uit de casus)
+- [ ] Route `/over` of `/transparantie` met uitleg: labels komen uit Media Bias Fact Check per bron, niet per artikel; bakjes zijn weergave
+- [ ] Benoem: matcher groepeert op trefwoordoverlap, niet op “dezelfde waarheid”; de AI kan zelf vooringenomen zijn; Groq/DeepSeek is een keus, geen neutrale arbiter
+- [ ] Op de detailpagina een korte disclaimer onder de kolommen, link naar die pagina
+- [ ] README: kopje “Transparantie” onder bekende beperkingen, zodat het niet alleen in de UI staat
+
+### Bouwblok 12: Groeperen en onderwerp verbeteren
+- [ ] `onderwerp` afleiden van gedeelde trefwoorden of de “meest centrale” titel, niet blind het eerste artikel
+- [ ] Matcher: documenteer in code waarom 40 woorden en drempel 7; eventueel RAKE (php-package) als vervanging van de eigen stopwoordenlijst
+- [ ] Handmatig herkoppelen blijft: `gebeurtenis_id` leegmaken, opnieuw `koppel()`
+- [ ] Getest op een bekende ketting-fout (digest vs echt nieuws) en op een goede groep (meerdere bronnen, zelfde feit)
+- [ ] Afwijking van de casus blijft: matching op omschrijving, niet op titel
+
+### Later / optioneel
+- [ ] RAKE als bouwblok 12 geen RAKE wordt (eigen stopwoordenlijst vervangen)
+- [ ] Scheduler: `artikelen:ophalen` + `samenvattingen:genereren` via Laravel `Schedule`
+- [ ] Framing-analyse uit bouwblok 4 opslaan en tonen (`vergelijk()` is nu uitgecommentarieerd)
+- [ ] Feature-tests voor `index` / `show`
+- [ ] Embeddings + vectorsimilariteit i.p.v. trefwoordoverlap (casus noemt dit als mogelijke clustering)
+- [ ] Volledige artikeltekst via web scraping of een nieuws-API i.p.v. de RSS-omschrijving in `volledige_tekst`
+- [ ] Oriëntatie per artikel via AI / tekstclassificatie i.p.v. alleen het MBFC-label per bron
