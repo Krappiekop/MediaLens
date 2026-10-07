@@ -1,5 +1,5 @@
 # MediaLens
-AI-ondersteund systeem dat nieuwsartikelen over dezelfde gebeurtenis uit meerdere bronnen verzamelt, elke bron een politieke oriëntatie meegeeft, en een neutrale samenvatting genereert die laat zien waar bronnen van mening verschillen. Gebouwd in Laravel. Het overzicht van gebeurtenissen staat in de browser; de detailpagina volgt in bouwblok 7.
+AI-ondersteund systeem dat nieuwsartikelen over dezelfde gebeurtenis uit meerdere bronnen verzamelt, elke bron een politieke oriëntatie meegeeft, en een neutrale samenvatting genereert die laat zien waar bronnen van mening verschillen. Gebouwd in Laravel. Overzicht en detailpagina van gebeurtenissen staan in de browser.
 
 ## Tech stack
 - Laravel (laravel/laravel), lokaal via XAMPP
@@ -16,9 +16,9 @@ AI-ondersteund systeem dat nieuwsartikelen over dezelfde gebeurtenis uit meerder
 7. `php artisan artikelen:ophalen` om artikelen binnen te halen en te groeperen. Per bron eerst `Ophalen bij …`, daarna één regel: hoeveel nieuwe artikelen, hoeveel daarvan een nieuwe gebeurtenis openden, en hoeveel aan een bestaande gebeurtenis gekoppeld zijn. Een URL die al in de database staat telt niet mee.
 8. `php artisan samenvattingen:genereren` voor alle gebeurtenissen, of `php artisan samenvattingen:genereren 5` voor één id
 9. Controleren in de Artisan-output en in phpMyAdmin (`artikelen`, `gebeurtenissen`, `samenvattingen`)
-10. `php artisan serve` en open `http://127.0.0.1:8000/` of `http://127.0.0.1:8000/gebeurtenissen`. XAMPP Apache draait PHP 8.2 en start Laravel 13 niet. De CLI-PHP (8.4+) wel. phpMyAdmin via XAMPP blijft werken.
+10. `php artisan serve` en open `http://127.0.0.1:8000/` of `http://127.0.0.1:8000/gebeurtenissen`. Een onderwerp opent `/gebeurtenissen/{id}`. XAMPP Apache draait PHP 8.2 en start Laravel 13 niet. De CLI-PHP (8.4+) wel. phpMyAdmin via XAMPP blijft werken.
 
-Of feeds en samenvattingen kloppen, zie je bij stap 7 tot en met 9. Of de lijst klopt, bij stap 10 plus phpMyAdmin (`gebeurtenissen`, `artikelen`, `samenvattingen`).
+Of feeds en samenvattingen kloppen, zie je bij stap 7 tot en met 9. Of de lijst en de detailpagina kloppen, bij stap 10 plus phpMyAdmin (`gebeurtenissen`, `artikelen`, `samenvattingen`, `bronnen`).
 
 De database hoeft niet handmatig overgezet te worden tussen machines, migraties en seeders bouwen hem overal identiek op.
 
@@ -106,7 +106,12 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 
 ### Overzicht
 - De lijst toont alleen gebeurtenissen met minstens 2 artikelen, dezelfde drempel als `samenvattingen:genereren`. Groepen met 1 artikel staan wél in de tabel `gebeurtenissen`, niet op de pagina. Dat wijkt af van een 1-op-1-check tegen de hele tabel.
-- `/` en `/gebeurtenissen` wijzen naar dezelfde `index`. Er is nog geen detailpagina.
+- `/` en `/gebeurtenissen` wijzen naar dezelfde `index`. Elk onderwerp linkt naar `/gebeurtenissen/{id}` via de named route `gebeurtenissen.show`.
+
+### Detailpagina
+- Bakjes `Links`, `Midden` en `Rechts` zijn alleen weergave. `bronnen.orientatie` blijft de Media Bias Fact Check-label (`left`, `left-center`, `neutral`, `right-center`, `right`). Die ruwe waarde staat per artikel achter de bronnaam.
+- `groupBy` zet bakjes in de volgorde van het eerste artikel. `sortBy` daarna forceert Links, Midden, Rechts. Een bakje zonder artikelen krijgt geen kop.
+- De views zijn kale HTML, nog geen gedeelde layout.
 
 ## Status en to-do
 
@@ -193,15 +198,19 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - [x] Getest in de browser: onderwerp, artikelcount en wel/geen samenvatting kloppen met phpMyAdmin (alleen groepen met 2+ artikelen)
 
 ### Bouwblok 7: Detailpagina van één gebeurtenis
-- [ ] Route `/gebeurtenissen/{gebeurtenis}` naar een `show`-methode op dezelfde controller
-- [ ] Route model binding: Laravel zoekt de `Gebeurtenis` zelf op via het id in de URL
-- [ ] Blade-view `resources/views/gebeurtenissen/show.blade.php`
-- [ ] Samenvatting tonen in de vier velden: kernfeiten, betrokkenen, overeenstemming, verschil
-- [ ] Duidelijke lege staat als deze gebeurtenis nog geen samenvatting heeft
-- [ ] Artikelen ophalen inclusief bron, via de relatie `artikelen.bron`
-- [ ] Artikelen groeperen op `orientatie` van de bron
-- [ ] Oriëntatie tonen zoals die in de database staat (`left-center`, `neutral`, `right-center`, `right`). Bundelen naar links, midden en rechts is alleen weergave, de opgeslagen waarde blijft de Media Bias Fact Check-label
-- [ ] Per artikel: titel, bronnaam en link naar de originele URL
-- [ ] Vanaf het overzicht linkt elk onderwerp naar deze pagina
-- [ ] Getest met een gebeurtenis die een samenvatting én artikelen van meerdere bronnen heeft
-- [ ] Getest met een gebeurtenis zonder samenvatting
+- [x] Route `/gebeurtenissen/{gebeurtenis}` naar een `show`-methode op dezelfde controller
+- [x] Route model binding: Laravel zoekt de `Gebeurtenis` zelf op via het id in de URL
+- [x] Blade-view `resources/views/gebeurtenissen/show.blade.php`
+- [x] Samenvatting tonen in de vier velden: kernfeiten, betrokkenen, overeenstemming, verschil
+- [x] Duidelijke lege staat als deze gebeurtenis nog geen samenvatting heeft
+- [x] Artikelen ophalen inclusief bron, via de relatie `artikelen.bron`
+- [x] Artikelen groeperen op `orientatie` van de bron
+- [x] Oriëntatie tonen zoals die in de database staat (`left-center`, `neutral`, `right-center`, `right`). Bundelen naar Links, Midden en Rechts is alleen weergave, de opgeslagen waarde blijft de Media Bias Fact Check-label
+- [x] Bakjes altijd in volgorde Links, Midden, Rechts (`sortBy` na `groupBy`)
+- [x] Per artikel: titel, bronnaam en link naar de originele URL
+- [x] Vanaf het overzicht linkt elk onderwerp naar deze pagina (`route('gebeurtenissen.show', $gebeurtenis)`)
+- [x] Getest met een gebeurtenis die een samenvatting én artikelen van meerdere bronnen heeft
+- [x] Getest met een gebeurtenis zonder samenvatting
+
+### Later op terugkomen
+- [ ] ipv zelf steekwoorden kijken naar rake lib

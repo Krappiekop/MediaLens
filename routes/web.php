@@ -5,3 +5,6 @@ use App\Http\Controllers\GebeurtenisController;
 
 Route::get('/', [GebeurtenisController::class, 'index']);
 Route::get('/gebeurtenissen', [GebeurtenisController::class, 'index']);
+
+Route::get('/gebeurtenissen/{gebeurtenis}', [GebeurtenisController::class, 'show'])
+    ->name('gebeurtenissen.show');

@@ -10,7 +10,9 @@
     <ul>
         @foreach ($gebeurtenissen as $gebeurtenis)
             <li>
-                {{ $gebeurtenis->onderwerp }}
+                <a href="{{ route('gebeurtenissen.show', $gebeurtenis) }}">
+                    {{ $gebeurtenis->onderwerp }}
+                </a>
                 ({{ $gebeurtenis->artikelen_count }} artikelen)
                 @if ($gebeurtenis->samenvatting_exists)
                     wel samenvatting
