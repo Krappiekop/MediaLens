@@ -42,6 +42,11 @@ return [
         'price_input' => (float) env('LITELLM_PRICE_INPUT', 0),
         'price_output' => (float) env('LITELLM_PRICE_OUTPUT', 0),
         'price_cached' => (float) env('LITELLM_PRICE_CACHED', 0),
+        'thinking_type' => env('LITELLM_THINKING_TYPE') ?: 'enabled',
+        'reasoning_effort' => env('LITELLM_REASONING_EFFORT') ?: 'high',
+        'temperature' => is_numeric(env('LITELLM_TEMPERATURE'))
+            ? (float) env('LITELLM_TEMPERATURE')
+            : 1,
     ],
 
 ];

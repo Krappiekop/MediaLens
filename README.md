@@ -9,7 +9,7 @@ AI-ondersteund systeem dat nieuwsartikelen over dezelfde gebeurtenis uit meerder
 ## Opzetten op een nieuwe machine
 1. Repo clonen
 2. `composer install`
-3. `.env.example` kopiëren naar `.env` en de database-instellingen invullen met je eigen lokale database naam, gebruiker en wachtwoord. Vul ook `LITELLM_BASE_URL`, `LITELLM_API_KEY` en `LITELLM_MODEL` in. Die namen staan al in `.env.example`, met model `openrouter/deepseek/deepseek-v4-flash`. De key hoort alleen in `.env`, niet in git.
+3. `.env.example` kopiëren naar `.env` en de database-instellingen invullen met je eigen lokale database naam, gebruiker en wachtwoord. Vul ook `LITELLM_BASE_URL`, `LITELLM_API_KEY` en `LITELLM_MODEL` in. Die namen staan al in `.env.example`, met model `openrouter/deepseek/deepseek-v4-flash`. De key hoort alleen in `.env`, niet in git. Optioneel: `LITELLM_THINKING_TYPE`, `LITELLM_REASONING_EFFORT` en `LITELLM_TEMPERATURE`. Leeg laten gebruikt de DeepSeek-standaard (`enabled`, `high`, `1`), via `config/services.php`.
 4. `php artisan key:generate`
 5. Database `medialens` aanmaken in phpMyAdmin
 6. `php artisan migrate:fresh --seed`
@@ -69,7 +69,7 @@ Onbruikbaar gebleken, niet gebruiken:
 - Drudge Report (`feedpress.me/drudgereportfeed`): `description` is pagina-HTML (Patreon, andere sites, feedpress-GIF), niet de artikeltekst. Matching op die kolom groepeert dan alle Drudge-items op de boilerplate
 - HuffPost, Reuters, The Economist, The Times (UK), MSNBC, Breitbart: nog niet bevestigd werkend
 
-The Nation stond eerder op die onbruikbaar-lijst (layout-HTML plus “appeared first on The Nation”). De feed is terug in de seeder als enige bron met oriëntatie `left`. `artikelen:ophalen` haalt nu tags, extra witruimte en `Continue reading...` uit `description` voordat de tekst wordt opgeslagen. `volledige_tekst` van Nation-items na het ophalen blijven controleren: `strip_tags` haalt geen herhaalde reclamezin weg.
+The Nation stond eerder op die onbruikbaar-lijst (layout-HTML plus “appeared first on The Nation”). De feed is terug in de seeder als enige bron met oriëntatie `left`. `artikelen:ophalen` haalt nu tags, extra witruimte, `Continue reading...` en de WordPress-footer `The post ... appeared first on ...` uit `description` voordat de tekst wordt opgeslagen. Die footer zat bij korte Nation-omschrijvingen in de eerste 40 woorden van de matcher (`post`, `appeared`, `first`, `nation`, plus de titel nog eens). Bestaande rijen blijven de oude tekst houden tot je ze opnieuw ophaalt: de duplicaatcheck op URL slaat ze over.
 
 `right-center` is de New York Post. Neutral zijn The Hill, Sky News en France 24. Right zijn The Daily Signal, Washington Examiner en Fox News. `left` is The Nation. De overige bronnen in de seeder zijn `left-center`.
 
@@ -82,7 +82,7 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 ### Feeds
 - Een RSS-feed levert meestal alleen titel en een korte samenvatting, niet de volledige artikeltekst. De kolom `volledige_tekst` is dus de RSS-omschrijving.
 - Status 200 zegt niets over of de feed actueel is. Altijd publicatiedatums controleren.
-- Status 200 zegt ook niets over de inhoud van `description`. Die kan HTML-layout zijn in plaats van artikeltekst. Bij het ophalen gaan tags naar een spatie, witruimte wordt plat, en `Continue reading...` aan het einde eraf. `strip_tags` alleen plakt zinnen aan elkaar en haalt geen reclamezinnen weg.
+- Status 200 zegt ook niets over de inhoud van `description`. Die kan HTML-layout zijn in plaats van artikeltekst. Bij het ophalen gaan tags naar een spatie, witruimte wordt plat, `Continue reading...` eraf, en de WordPress-zin `The post ... appeared first on ...` eraf. `strip_tags` alleen plakt zinnen aan elkaar en haalt geen reclamezinnen weg.
 
 ### Groeperen
 - Matching gebeurt op `volledige_tekst`, niet op de titel. Koppen over dezelfde gebeurtenis verschillen te sterk per bron. Dat wijkt af van de oorspronkelijke casusformulering (trefwoorden in de titel).
@@ -101,6 +101,7 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - `samenvattingen:genereren` probeert een gebeurtenis maximaal 3 keer. Ongeldige JSON gooit een `RuntimeException` in `slaOp()`, vóór `create()` of `update()`. Een LLM die langer duurt dan `Http::timeout(60)` gooit een `ConnectionException`. Na 3 mislukte pogingen slaat het command die gebeurtenis over en gaat verder. Een andere exception stopt het command nog wel. Elke timeout-poging kan 60 seconden duren.
 - Bij een HTTP-fout geeft `LiteLlm::vraag()` een lege string terug. Het command meldt dan een ontbrekend veld. De statuscode van de proxy staat daar niet bij.
 - Prompt caching bij DeepSeek is automatisch. Het vaste system-bericht staat vooraan, de artikelen in het user-bericht. `cached_tokens` wordt gelogd in `storage/logs/laravel.log`. Een hit zie je vooral als dezelfde prompt terugkomt, zoals een retry of dezelfde gebeurtenis opnieuw samenvatten. Verschillende gebeurtenissen blijven meestal op `0`, omdat hun artikeltekst meteen afwijkt. `migrate:fresh` leegt alleen de database, niet de cache bij de provider.
+- `LiteLlm` stuurt `thinking.type`, `reasoning_effort` en `temperature` mee uit `.env`. Lege regels vallen terug op `enabled`, `high` en `1`. Bij thinking aan heeft `temperature` geen effect; `top_p` speelt alleen tussen 0,95 en 1. Effort `max` kan de timeout van 60 seconden raken. Of de Educom-proxy die velden doorgeeft, zie je aan `reasoning_content` of `reasoning_tokens` in de response, niet alleen aan een 200.
 
 ## Status en to-do
 
@@ -134,7 +135,7 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - [x] Foutafhandeling bij 4xx/5xx (`failed()`)
 - [x] Foutafhandeling bij kapotte of lege XML bij status 200
 - [x] Per bron één totaalregel in plaats van een regel per artikel: nieuwe artikelen, nieuwe gebeurtenissen, gekoppeld aan een bestaande gebeurtenis
-- [x] `description` opschonen vóór opslaan: HTML-tags naar spaties, witruimte plat, `Continue reading...` eraf
+- [x] `description` opschonen vóór opslaan: HTML-tags naar spaties, witruimte plat, `Continue reading...` eraf, WordPress-footer `The post ... appeared first on ...` eraf
 - [x] `volledige_tekst` van de later toegevoegde wereldwijde en lokale feeds controleren, niet alleen de titel of status 200
 
 ### Bouwblok 3: Gebeurtenissen groeperen
@@ -175,8 +176,7 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - [x] JSON-format best practices in de samenvattingsprompt (`json_schema`)
 - [x] Prompt caching (vast system-bericht vooraan, artikelen in het user-bericht; `cached_tokens` in de log)
 - [x] Input- en outputtokens loggen, plus een kostenschatting uit `.env`
-
-- [ ] parameter testing van deepseek model
+- [x] LLM-parameters via `.env`: `LITELLM_THINKING_TYPE`, `LITELLM_REASONING_EFFORT`, `LITELLM_TEMPERATURE` (leeg = DeepSeek-standaard)
 
 ### Bouwblok 6: Overzicht van gebeurtenissen
 - [ ] Route `/gebeurtenissen` in `routes/web.php`, in plaats van de standaard welkomstpagina op `/`

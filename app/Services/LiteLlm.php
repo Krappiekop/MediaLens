@@ -20,10 +20,15 @@ class LiteLlm
         // Voeg het user bericht toe aan de messages array
         $messages[] = ['role' => 'user', 'content' => $bericht];
 
-        // Maak de body voor de HTTP-aanvraag
+        // Maak de body voor de HTTP-aanvraag met de configuratie
         $body = [
             'model' => config('services.litellm.model'),
             'messages' => $messages,
+            'temperature' => config('services.litellm.temperature'),
+            'thinking' => [
+                'type' => config('services.litellm.thinking_type'),
+            ],
+            'reasoning_effort' => config('services.litellm.reasoning_effort'),
         ];
 
         // Voeg de response format toe aan de body als deze is opgegeven
@@ -42,6 +47,8 @@ class LiteLlm
         if ($response->failed()) {
             return '';
         }
+
+
 
         // Haal de prompt cache op
         $promptTokens = (int) $response->json('usage.prompt_tokens');
