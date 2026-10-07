@@ -69,6 +69,12 @@ class ArtikelenOphalen extends Command
                 $tekst = preg_replace('/Continue reading\.?\.?\.?\s*$/i', '', $tekst);
                 // "The post ... appeared first on ..." verwijderen
                 $tekst = preg_replace('/\s*The post .+? appeared first on .+$/i', '', $tekst);
+                // Guardian-promo: "Get our … email … free app or daily news podcast"
+                $tekst = preg_replace(
+                    '/\s*Get our (?:new political|breaking news) email,?\s*free app or daily news podcast\s*/i',
+                    ' ',
+                    $tekst
+                );
                 // spaties aan het begin en einde verwijderen
                 $tekst = trim($tekst);
 
