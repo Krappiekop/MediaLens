@@ -70,7 +70,7 @@ Onbruikbaar gebleken, niet gebruiken:
 - Drudge Report (`feedpress.me/drudgereportfeed`): `description` is pagina-HTML (Patreon, andere sites, feedpress-GIF), niet de artikeltekst. Matching op die kolom groepeert dan alle Drudge-items op de boilerplate
 - HuffPost, Reuters, The Economist, The Times (UK), MSNBC, Breitbart: nog niet bevestigd werkend
 
-The Nation stond eerder op die onbruikbaar-lijst (layout-HTML plus “appeared first on The Nation”). De feed is terug in de seeder als enige bron met oriëntatie `left`. `artikelen:ophalen` haalt nu tags, extra witruimte, `Continue reading...` en de WordPress-footer `The post ... appeared first on ...` uit `description` voordat de tekst wordt opgeslagen. Die footer zat bij korte Nation-omschrijvingen in de eerste 40 woorden van de matcher (`post`, `appeared`, `first`, `nation`, plus de titel nog eens). Bestaande rijen blijven de oude tekst houden tot je ze opnieuw ophaalt: de duplicaatcheck op URL slaat ze over.
+The Nation stond eerder op die onbruikbaar-lijst (layout-HTML plus “appeared first on The Nation”). De feed is terug in de seeder als enige bron met oriëntatie `left`. `artikelen:ophalen` haalt nu tags, extra witruimte, `Continue reading...`, de WordPress-footer `The post ... appeared first on ...` en de Guardian-promo `Get our … email … free app or daily news podcast` uit `description` voordat de tekst wordt opgeslagen. Die footer zat bij korte Nation-omschrijvingen in de eerste 40 woorden van de matcher (`post`, `appeared`, `first`, `nation`, plus de titel nog eens). De Guardian-promo (tussen de standfirst en de alinea, na tag-strip: `get`, `our`, `email`, `free`, `app`, `daily`, `news`, `podcast`) gaf 8 gedeelde trefwoorden, boven drempel 7. Daardoor werden losse Guardian-AU-stukken (kolenmijn, immigratie, moordzaken) één gebeurtenis. Bestaande rijen blijven de oude tekst houden tot je ze zelf bijwerkt: de duplicaatcheck op URL slaat ze over. Daarna `gebeurtenis_id` leegmaken, `gebeurtenissen` legen, opnieuw `koppel()`.
 
 `right-center` is de New York Post. Neutral zijn The Hill, Sky News en France 24. Right zijn The Daily Signal, Washington Examiner en Fox News. `left` is The Nation. De overige bronnen in de seeder zijn `left-center`.
 
@@ -83,13 +83,13 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 ### Feeds
 - Een RSS-feed levert meestal alleen titel en een korte samenvatting, niet de volledige artikeltekst. De kolom `volledige_tekst` is dus de RSS-omschrijving.
 - Status 200 zegt niets over of de feed actueel is. Altijd publicatiedatums controleren.
-- Status 200 zegt ook niets over de inhoud van `description`. Die kan HTML-layout zijn in plaats van artikeltekst. Bij het ophalen gaan tags naar een spatie, witruimte wordt plat, `Continue reading...` eraf, en de WordPress-zin `The post ... appeared first on ...` eraf. `strip_tags` alleen plakt zinnen aan elkaar en haalt geen reclamezinnen weg.
+- Status 200 zegt ook niets over de inhoud van `description`. Die kan HTML-layout zijn in plaats van artikeltekst. Bij het ophalen gaan tags naar een spatie, witruimte wordt plat, `Continue reading...` eraf, de WordPress-zin `The post ... appeared first on ...` eraf, en de Guardian-promo `Get our … email … free app or daily news podcast` eraf. `strip_tags` alleen plakt zinnen aan elkaar en haalt geen reclamezinnen weg.
 
 ### Groeperen
 - Matching gebeurt op `volledige_tekst`, niet op de titel. Koppen over dezelfde gebeurtenis verschillen te sterk per bron. Dat wijkt af van de oorspronkelijke casusformulering (trefwoorden in de titel).
 - Alleen de eerste 40 woorden van die omschrijving tellen mee (`vergelijkTekst()`). De volle tekst blijft in de database voor de AI. Zonder die knip werd drempel 7 vrijwel niets: een Guardian-digest van honderden woorden deelde makkelijk 7 journalistieke woorden met SCMP of NDTV.
 - Overlapdrempel is 7 trefwoorden (`$minimaleOverlap` in `GebeurtenisMatcher`), tijdvenster max 3 dagen. Twee gedeelde woorden was te streng op titels en te los op omschrijvingen.
-- Trefwoordmatching blijft simpel: de eerste kandidaat die de drempel haalt wint. Ketting-matching kan nog, maar een digest matcht niet meer op alinea 4. Voorbeeld van vóór de knip: Trump/Iran-stukken plus Guardian First Thing plus SCMP-Hongkong in één groep.
+- Trefwoordmatching blijft simpel: de eerste kandidaat die de drempel haalt wint. Ketting-matching kan nog. Voorbeeld van vóór de knip van 40 woorden: Trump/Iran-stukken plus Guardian First Thing plus SCMP-Hongkong in één groep. Voorbeeld daarna: Guardian-AU-stukken via de gedeelde promo in de eerste 40 woorden (8 trefwoorden, drempel 7). Die promo gaat er bij het ophalen af; bestaande `volledige_tekst` blijft vies tot je die rijen bijwerkt en opnieuw koppelt.
 - Artikelen worden alleen bij het ophalen of bij een handmatige `koppel()`-run gematcht. Na een wijziging in de matcher: `gebeurtenis_id` leegmaken, `gebeurtenissen` legen, opnieuw koppelen.
 
 ### Oriëntatie
@@ -145,7 +145,7 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - [x] Foutafhandeling bij 4xx/5xx (`failed()`)
 - [x] Foutafhandeling bij kapotte of lege XML bij status 200
 - [x] Per bron één totaalregel in plaats van een regel per artikel: nieuwe artikelen, nieuwe gebeurtenissen, gekoppeld aan een bestaande gebeurtenis
-- [x] `description` opschonen vóór opslaan: HTML-tags naar spaties, witruimte plat, `Continue reading...` eraf, WordPress-footer `The post ... appeared first on ...` eraf
+- [x] `description` opschonen vóór opslaan: HTML-tags naar spaties, witruimte plat, `Continue reading...` eraf, WordPress-footer `The post ... appeared first on ...` eraf, Guardian-promo `Get our … email … free app or daily news podcast` eraf
 - [x] `volledige_tekst` van de later toegevoegde wereldwijde en lokale feeds controleren, niet alleen de titel of status 200
 
 ### Bouwblok 3: Gebeurtenissen groeperen
