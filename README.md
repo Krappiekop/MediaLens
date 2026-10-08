@@ -6,6 +6,7 @@ AI-ondersteund systeem dat nieuwsartikelen over dezelfde gebeurtenis uit meerder
 - MySQL database, lokaal beheerd via phpMyAdmin
 - PHP 8.5
 - Node.js, Vite en Tailwind voor de layout. `npm run dev` naast `php artisan serve`
+- `donatello-za/rake-php-plus` (v2) voor trefwoorden in `GebeurtenisMatcher`. Gewone Composer-library, geen Laravel-package. Komt mee met `composer install`.
 
 ## Opzetten op een nieuwe machine
 1. Repo clonen
@@ -71,7 +72,7 @@ Onbruikbaar gebleken, niet gebruiken:
 - Drudge Report (`feedpress.me/drudgereportfeed`): `description` is pagina-HTML (Patreon, andere sites, feedpress-GIF), niet de artikeltekst. Matching op die kolom groepeert dan alle Drudge-items op de boilerplate
 - HuffPost, Reuters, The Economist, The Times (UK), MSNBC, Breitbart: nog niet bevestigd werkend
 
-The Nation stond eerder op die onbruikbaar-lijst (layout-HTML plus “appeared first on The Nation”). De feed is terug in de seeder als enige bron met oriëntatie `left`. `artikelen:ophalen` haalt nu tags, extra witruimte, `Continue reading...` en de WordPress-footer `The post ... appeared first on ...` uit `description`. Guardian-promo's (`Get our …` en `Listen to the podcast …`) zitten in `<li><p>…</p></li>` en gaan eraf vóór tags naar spaties. De podcasttitel wisselt per artikel, dus het hele `<li>` gaat mee. Daarna blijft van `</a>,` een spatie over (`email ,`) en een tekstfilter op `email,` matcht niet. Die footer zat bij korte Nation-omschrijvingen in de eerste 40 woorden van de matcher (`post`, `appeared`, `first`, `nation`, plus de titel nog eens). De Guardian-promo (tussen de standfirst en de alinea: `get`, `our`, `email`, `free`, `app`, `daily`, `news`, `podcast`) gaf 8 gedeelde trefwoorden, boven drempel 7. Daardoor werden losse Guardian-AU-stukken (kolenmijn, immigratie, moordzaken) één gebeurtenis. Bestaande rijen blijven de oude tekst houden tot je ze zelf bijwerkt: de duplicaatcheck op URL slaat ze over. Daarna `gebeurtenis_id` leegmaken, `gebeurtenissen` legen, opnieuw `koppel()`.
+The Nation stond eerder op die onbruikbaar-lijst (layout-HTML plus “appeared first on The Nation”). De feed is terug in de seeder als enige bron met oriëntatie `left`. `artikelen:ophalen` haalt nu tags, extra witruimte, `Continue reading...` en de WordPress-footer `The post ... appeared first on ...` uit `description`. Guardian-promo's (`Get our …` en `Listen to the podcast …`) zitten in `<li><p>…</p></li>` en gaan eraf vóór tags naar spaties. De podcasttitel wisselt per artikel, dus het hele `<li>` gaat mee. Daarna blijft van `</a>,` een spatie over (`email ,`) en een tekstfilter op `email,` matcht niet. Die footer zat bij korte Nation-omschrijvingen in de eerste 40 woorden van de matcher (`post`, `appeared`, `first`, `nation`, plus de titel nog eens). De Guardian-promo (tussen de standfirst en de alinea: `get`, `our`, `email`, `free`, `app`, `daily`, `news`, `podcast`) gaf 8 gedeelde trefwoorden, boven de toenmalige drempel 7. Daardoor werden losse Guardian-AU-stukken (kolenmijn, immigratie, moordzaken) één gebeurtenis. RAKE (`en_US`) knipt nu woorden als `get` en `our` weg; de `<li>`-strip blijft de echte fix. Bestaande rijen blijven de oude tekst houden tot je ze zelf bijwerkt: de duplicaatcheck op URL slaat ze over. Daarna samenvattingen weg, `gebeurtenis_id` leegmaken, `gebeurtenissen` legen, opnieuw `koppel()`.
 
 `right-center` is de New York Post. Neutral zijn The Hill, Sky News en France 24. Right zijn The Daily Signal, Washington Examiner en Fox News. `left` is The Nation. De overige bronnen in de seeder zijn `left-center`.
 
@@ -88,10 +89,13 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 
 ### Groeperen
 - Matching gebeurt op `volledige_tekst`, niet op de titel. Koppen over dezelfde gebeurtenis verschillen te sterk per bron. Dat wijkt af van de oorspronkelijke casusformulering (trefwoorden in de titel).
-- Alleen de eerste 40 woorden van die omschrijving tellen mee (`vergelijkTekst()`). De volle tekst blijft in de database voor de AI. Zonder die knip werd drempel 7 vrijwel niets: een Guardian-digest van honderden woorden deelde makkelijk 7 journalistieke woorden met SCMP of NDTV.
-- Overlapdrempel is 7 trefwoorden (`$minimaleOverlap` in `GebeurtenisMatcher`), tijdvenster max 3 dagen. Twee gedeelde woorden was te streng op titels en te los op omschrijvingen.
-- Trefwoordmatching blijft simpel: de eerste kandidaat die de drempel haalt wint. Ketting-matching kan nog. Voorbeeld van vóór de knip van 40 woorden: Trump/Iran-stukken plus Guardian First Thing plus SCMP-Hongkong in één groep. Voorbeeld daarna: Guardian-AU-stukken via de gedeelde promo in de eerste 40 woorden (8 trefwoorden, drempel 7). Die promo's (`Get our …` en `Listen to the podcast …`) gaan er bij het ophalen af als HTML-`<li>` vóór tag-strip; bestaande `volledige_tekst` blijft vies tot je die rijen bijwerkt en opnieuw koppelt.
-- Artikelen worden alleen bij het ophalen of bij een handmatige `koppel()`-run gematcht. Na een wijziging in de matcher: `gebeurtenis_id` leegmaken, `gebeurtenissen` legen, opnieuw koppelen.
+- Alleen de eerste 40 woorden van die omschrijving tellen mee (`vergelijkTekst()`). De volle tekst blijft in de database voor de AI. Zonder die knip deelde een Guardian-digest van honderden woorden makkelijk journalistiek-Engels met SCMP of NDTV. Die knip blijft, ook na RAKE.
+- Trefwoorden komen uit RAKE (`donatello-za/rake-php-plus`), niet uit een eigen stopwoordenlijst. `trefwoorden()` vraagt `keywords()` (losse woorden) met taal `en_US`, omdat de feeds Engels zijn. `get()` geeft zinsdelen (`supreme court allowed`); die matchen niet met `array_intersect` op `supreme court`. RAKE gebruikt stopwoorden als snijpunten. `en_US` is veel groter dan de oude array van 22 woorden, dus de overlap daalt (`third` viel in Tinker af).
+- Overlapdrempel is 6 trefwoorden (`$minimaleOverlap` in `GebeurtenisMatcher`). Tijdvenster `$maxDagen = 1`: ±1 kalenderdag (`whereBetween`), dus drie datums rond de publicatiedatum. Met de eigen lijst stond de drempel op 7 en het venster op 3. Na RAKE koppelde 7 te weinig, 5 te los; 6 is de huidige knop. Of de groepen hetzelfde feit zijn, is een steekproef in phpMyAdmin of de browser, geen gegeven.
+- `RakePlus::create()` laadt `en_US` bij elke aanroep. Zonder hergebruik wordt `artikelen:ophalen` traag. De matcher houdt één `$rake`: eerste tekst `create()`, daarna `extract()`. Het command maakt die matcher één keer vóór de loop.
+- `extract()` op dezelfde tekst blijft duur als `koppel()` elke kandidaat opnieuw door RAKE haalt. `$trefwoordCache` slaat de trefwoorden per artikel-id op (`trefwoordenVan()`). Het nieuwe artikel gaat één keer door RAKE, elke kandidaat hoogstens één keer in de hele command. `overlap()` en `zelfdeGebeurtenis()` gaan om de cache heen (Tinker met losse strings).
+- Trefwoordmatching blijft simpel: de eerste kandidaat die de drempel haalt wint. Ketting-matching kan nog. Voorbeeld van vóór de knip van 40 woorden: Trump/Iran-stukken plus Guardian First Thing plus SCMP-Hongkong in één groep. Voorbeeld daarna: Guardian-AU-stukken via de gedeelde promo in de eerste 40 woorden (8 trefwoorden, toen drempel 7). Die promo's (`Get our …` en `Listen to the podcast …`) gaan er bij het ophalen af als HTML-`<li>` vóór tag-strip; bestaande `volledige_tekst` blijft vies tot je die rijen bijwerkt en opnieuw koppelt.
+- Artikelen worden alleen bij het ophalen of bij een handmatige `koppel()`-run gematcht. Na een wijziging in de matcher: samenvattingen weg (foreign key), `gebeurtenis_id` leegmaken, `gebeurtenissen` legen, opnieuw koppelen. Of `migrate:fresh --seed` plus `artikelen:ophalen`.
 
 ### Oriëntatie
 - De oriëntatie komt van een dataset en is een generalisatie per bron, niet per artikel.
@@ -155,12 +159,14 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 ### Bouwblok 3: Gebeurtenissen groeperen
 - [x] Service-klasse `app/Services/GebeurtenisMatcher.php`
 - [x] Aanroepen direct na het opslaan van een nieuw artikel in het command
-- [x] Stopwoorden eruit filteren
+- [x] Trefwoorden via RAKE (`donatello-za/rake-php-plus`, `en_US`, `keywords()`), niet meer een eigen stopwoordenlijst
 - [x] Matching op overlap in de eerste 40 woorden van `volledige_tekst` (RSS-omschrijving), niet de titel
 - [x] HTML uit de tekst strippen voor de trefwoorden
 - [x] Gebeurtenis krijgt als `onderwerp` de titel van het eerste artikel
-- [x] Groepering binnen max 3 dagen
-- [x] Drempel: minstens 7 gedeelde trefwoorden (`$minimaleOverlap`)
+- [x] Groepering binnen `$maxDagen = 1` (±1 kalenderdag)
+- [x] Drempel: minstens 6 gedeelde trefwoorden (`$minimaleOverlap`). Was 7 bij de eigen stopwoordenlijst; na RAKE 5, daarna 6
+- [x] Eén `RakePlus`-instance hergebruiken (`extract()`), anders laadt elke vergelijking `en_US` opnieuw
+- [x] Trefwoorden per artikel-id cachen (`trefwoordenVan()`), anders draait RAKE opnieuw per kandidaat
 - [x] Nieuwe gebeurtenis aanmaken als er geen match is
 - [x] `gebeurtenis_id` op het artikel updaten
 - [x] Getest met artikelen over hetzelfde feit bij meerdere bronnen (SCOTUS third-country deportations)
@@ -246,13 +252,13 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 
 ### Bouwblok 12: Groeperen en onderwerp verbeteren
 - [ ] `onderwerp` afleiden van gedeelde trefwoorden of de “meest centrale” titel, niet blind het eerste artikel
-- [ ] Matcher: documenteer in code waarom 40 woorden en drempel 7; eventueel RAKE (php-package) als vervanging van de eigen stopwoordenlijst
-- [ ] Handmatig herkoppelen blijft: `gebeurtenis_id` leegmaken, opnieuw `koppel()`
+- [x] RAKE (`donatello-za/rake-php-plus`) als vervanging van de eigen stopwoordenlijst: `keywords()`, `en_US`, drempel 6, venster 1 dag
+- [ ] Matcher: documenteer in code waarom 40 woorden, drempel 6 en `$maxDagen = 1`
+- [x] Handmatig herkoppelen blijft: samenvattingen weg, `gebeurtenis_id` leegmaken, opnieuw `koppel()`, of `migrate:fresh --seed` plus `artikelen:ophalen`
 - [ ] Getest op een bekende ketting-fout (digest vs echt nieuws) en op een goede groep (meerdere bronnen, zelfde feit)
 - [ ] Afwijking van de casus blijft: matching op omschrijving, niet op titel
 
 ### Later / optioneel
-- [ ] RAKE als bouwblok 12 geen RAKE wordt (eigen stopwoordenlijst vervangen)
 - [ ] Scheduler: `artikelen:ophalen` + `samenvattingen:genereren` via Laravel `Schedule`
 - [ ] Framing-analyse uit bouwblok 4 opslaan en tonen (`vergelijk()` is nu uitgecommentarieerd)
 - [ ] Feature-tests voor `index` / `show`

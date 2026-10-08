@@ -4,34 +4,11 @@ namespace App\Services;
 use Carbon\Carbon;
 use App\Models\Artikel;
 use App\Models\Gebeurtenis;
+use DonatelloZa\RakePlus\RakePlus;
 
 class GebeurtenisMatcher
 {
-    // stopwoorden die niet meegehaald worden in de trefwoorden
-    private array $stopwoorden = [
-        'a',
-        'an',
-        'and',
-        'as',
-        'at',
-        'be',
-        'by',
-        'for',
-        'from',
-        'in',
-        'is',
-        'it',
-        'its',
-        'of',
-        'on',
-        'or',
-        's',
-        'says',
-        'the',
-        'this',
-        'to',
-        'with',
-    ];
+
 
     private function vergelijkTekst(Artikel $artikel): string
     {
@@ -50,8 +27,10 @@ class GebeurtenisMatcher
         return implode(' ', array_slice($woorden, 0, 40));
     }
 
-    private int $minimaleOverlap = 7;                               // <--- minimale hoeveelheid trefwoorden die in beide teksten moeten voorkomen om een match te hebben (default 2)
-    private int $maxDagen = 3;
+    private int $minimaleOverlap = 5;   // <--- minimale hoeveelheid trefwoorden die in beide teksten moeten voorkomen om een match te hebben
+    private int $maxDagen = 1;
+    private ?RakePlus $rake = null;
+    private array $trefwoordCache = [];
 
     // koppel de artikel aan een gebeurtenis
     public function koppel(Artikel $artikel): string
@@ -68,13 +47,12 @@ class GebeurtenisMatcher
             ->whereBetween('publicatiedatum', [$vanaf, $tot])           // <--- artikel publicatiedatum tussen $vanaf en $tot (max 3 dagen verschil)
             ->get();
 
+        $woordenNieuw = $this->trefwoordenVan($artikel);
+
         foreach ($kandidaten as $kandidaat) {
-            if (
-                $this->zelfdeGebeurtenis(
-                    $this->vergelijkTekst($artikel),
-                    $this->vergelijkTekst($kandidaat)
-                )
-            ) { // <--- vergelijk de tekst van het artikel en de kandidaat
+            $woordenKandidaat = $this->trefwoordenVan($kandidaat);
+
+            if (count(array_intersect($woordenNieuw, $woordenKandidaat)) >= $this->minimaleOverlap) { // <--- vergelijk de tekst van het artikel en de kandidaat
                 $artikel->update([
                     'gebeurtenis_id' => $kandidaat->gebeurtenis_id, // <--- artikel gekoppeld aan gebeurtenis
                 ]);
@@ -97,16 +75,26 @@ class GebeurtenisMatcher
     // trefwoorden uit de titel halen
     public function trefwoorden(string $titel): array
     {
-        $titel = html_entity_decode(strip_tags($titel), ENT_QUOTES | ENT_HTML5, 'UTF-8'); // <--- tags en entiteiten verwijderen
-        $titel = mb_strtolower($titel); // <--- titel omgezet naar lowercase
-        $woorden = preg_split('/[^\p{L}\p{N}]+/u', $titel, -1, PREG_SPLIT_NO_EMPTY);
+        $titel = html_entity_decode(strip_tags($titel), ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
-        $woorden = array_filter($woorden, function ($woord) {       // <--- array_filter om te filteren
-            return !in_array($woord, $this->stopwoorden, true)     // <--- stopwoorden verwijderen
-                && mb_strlen($woord) > 1;                           // <--- woorden korter dan 2 letters verwijderen
-        });
+        if ($this->rake === null) {
+            $this->rake = RakePlus::create($titel, 'en_US');
 
-        return array_values(array_unique($woorden));
+            return $this->rake->keywords();
+        }
+
+        return $this->rake->extract($titel)->keywords();
+    }
+
+    private function trefwoordenVan(Artikel $artikel): array
+    {
+        $id = $artikel->id;
+
+        if (!isset($this->trefwoordCache[$id])) {
+            $this->trefwoordCache[$id] = $this->trefwoorden($this->vergelijkTekst($artikel));
+        }
+
+        return $this->trefwoordCache[$id];
     }
 
     // trefwoorden die in beide titels voorkomen
