@@ -5,10 +5,11 @@ AI-ondersteund systeem dat nieuwsartikelen over dezelfde gebeurtenis uit meerder
 - Laravel (laravel/laravel), lokaal via XAMPP
 - MySQL database, lokaal beheerd via phpMyAdmin
 - PHP 8.5
+- Node.js, Vite en Tailwind voor de layout. `npm run dev` naast `php artisan serve`
 
 ## Opzetten op een nieuwe machine
 1. Repo clonen
-2. `composer install`
+2. `composer install`, daarna `npm install`. Vite en Tailwind zitten in `package.json`. `node_modules` staat in `.gitignore`, dus die map komt niet mee met een clone.
 3. `.env.example` kopiëren naar `.env` en de database-instellingen invullen met je eigen lokale database naam, gebruiker en wachtwoord. Vul ook `LITELLM_BASE_URL`, `LITELLM_API_KEY` en `LITELLM_MODEL` in. Die namen staan al in `.env.example`, met model `openrouter/deepseek/deepseek-v4-flash`. De key hoort alleen in `.env`, niet in git. Optioneel: `LITELLM_THINKING_TYPE`, `LITELLM_REASONING_EFFORT` en `LITELLM_TEMPERATURE`. Leeg laten gebruikt de DeepSeek-standaard (`enabled`, `high`, `1`), via `config/services.php`.
 4. `php artisan key:generate`
 5. Database `medialens` aanmaken in phpMyAdmin
@@ -16,7 +17,7 @@ AI-ondersteund systeem dat nieuwsartikelen over dezelfde gebeurtenis uit meerder
 7. `php artisan artikelen:ophalen` om artikelen binnen te halen en te groeperen. Per bron eerst `Ophalen bij …`, daarna één regel: hoeveel nieuwe artikelen, hoeveel daarvan een nieuwe gebeurtenis openden, en hoeveel aan een bestaande gebeurtenis gekoppeld zijn. Een URL die al in de database staat telt niet mee.
 8. `php artisan samenvattingen:genereren` voor alle gebeurtenissen, of `php artisan samenvattingen:genereren 5` voor één id
 9. Controleren in de Artisan-output en in phpMyAdmin (`artikelen`, `gebeurtenissen`, `samenvattingen`)
-10. `php artisan serve` en open `http://127.0.0.1:8000/` of `http://127.0.0.1:8000/gebeurtenissen`. Een onderwerp opent `/gebeurtenissen/{id}`. XAMPP Apache draait PHP 8.2 en start Laravel 13 niet. De CLI-PHP (8.4+) wel. phpMyAdmin via XAMPP blijft werken.
+10. `php artisan serve` en open `http://127.0.0.1:8000/` of `http://127.0.0.1:8000/gebeurtenissen`. Een onderwerp opent `/gebeurtenissen/{id}`. In een tweede terminal: `npm run dev`. Dat schrijft `public/hot` en levert de CSS. Zonder dat proces, en zonder `public/build/manifest.json` van `npm run build`, blijft de pagina HTML. De `@if` rond `@vite` in `resources/views/layouts/app.blade.php` voorkomt dan een `ViteManifestNotFoundException`. XAMPP Apache draait PHP 8.2 en start Laravel 13 niet. De CLI-PHP (8.4+) wel. phpMyAdmin via XAMPP blijft werken.
 
 Of feeds en samenvattingen kloppen, zie je bij stap 7 tot en met 9. Of de lijst en de detailpagina kloppen, bij stap 10 plus phpMyAdmin (`gebeurtenissen`, `artikelen`, `samenvattingen`, `bronnen`).
 
@@ -106,12 +107,12 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 
 ### Overzicht
 - De lijst toont alleen gebeurtenissen met minstens 2 artikelen, dezelfde drempel als `samenvattingen:genereren`. Groepen met 1 artikel staan wél in de tabel `gebeurtenissen`, niet op de pagina. Dat wijkt af van een 1-op-1-check tegen de hele tabel.
-- `/` en `/gebeurtenissen` wijzen naar dezelfde `index`. Elk onderwerp linkt naar `/gebeurtenissen/{id}` via de named route `gebeurtenissen.show`.
+- `/` en `/gebeurtenissen` wijzen naar dezelfde `index`. `/gebeurtenissen` heet `gebeurtenissen.index`. `/` heeft geen naam: een named route wijst naar één URL. Elk onderwerp linkt naar `/gebeurtenissen/{id}` via `gebeurtenissen.show`.
 
 ### Detailpagina
-- Bakjes `Links`, `Midden` en `Rechts` zijn alleen weergave. `bronnen.orientatie` blijft de Media Bias Fact Check-label (`left`, `left-center`, `neutral`, `right-center`, `right`). Die ruwe waarde staat per artikel achter de bronnaam.
+- Bakjes `Links`, `Midden` en `Rechts` zijn alleen weergave. `bronnen.orientatie` blijft de Media Bias Fact Check-label (`left`, `left-center`, `neutral`, `right-center`, `right`). Die ruwe waarde staat per artikel onder de titel, bij de bronnaam.
 - `groupBy` zet bakjes in de volgorde van het eerste artikel. `sortBy` daarna forceert Links, Midden, Rechts. Een bakje zonder artikelen krijgt geen kop.
-- De views zijn kale HTML, nog geen gedeelde layout.
+- Lijst en detail delen `resources/views/layouts/app.blade.php` (kop, footer, Tailwind). Elk samenvattingsveld is één `<p>`. In de huidige rijen zitten geen regeleinden, dus `nl2br` zou die tekst niet splitsen. Zonder `public/hot` (`npm run dev`) en zonder `public/build/manifest.json` (`npm run build`) laadt `@vite` niet. De pagina blijft dan HTML zonder Tailwind.
 
 ## Status en to-do
 
@@ -213,12 +214,12 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - [x] Getest met een gebeurtenis zonder samenvatting
 
 ### Bouwblok 8: Layout en leesbare UI
-- [ ] Blade-layout `resources/views/layouts/app.blade.php` met `@yield` / `@section` (Laravel-conventie; nu twee losse HTML-documenten)
-- [ ] Vite/Tailwind koppelen (`@vite` in de layout); `npm run dev` naast `php artisan serve`
-- [ ] Kop MediaLens, link naar het overzicht, op de detailpagina een terug-link via named route
-- [ ] Typografie: samenvatting als alinea’s (`nl2br` of aparte `<p>`), artikellijst leesbaar op mobiel
-- [ ] Named route voor `index` (nu alleen `gebeurtenissen.show`)
-- [ ] Getest: `/` en `/gebeurtenissen/{id}` delen header/footer; zonder Vite-build geen kapotte pagina (fallback of duidelijke README-stap)
+- [x] Blade-layout `resources/views/layouts/app.blade.php` met `@yield` / `@section`
+- [x] Vite/Tailwind koppelen (`@vite` in de layout); `npm run dev` naast `php artisan serve`
+- [x] Kop MediaLens, link naar het overzicht, op de detailpagina een terug-link via named route
+- [x] Typografie: samenvatting als aparte `<p>` per veld, artikellijst leesbaar op mobiel
+- [x] Named route voor `index`: `gebeurtenissen.index` op `/gebeurtenissen`
+- [x] Getest: `/` en `/gebeurtenissen/{id}` delen header/footer; zonder `public/hot` of `public/build/manifest.json` blijft de pagina HTML (geen `ViteManifestNotFoundException`)
 
 ### Bouwblok 9: Spectrum als drie kolommen
 - [ ] Detailpagina: drie kolommen Links / Midden / Rechts (stacked op smal scherm)

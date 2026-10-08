@@ -1,16 +1,13 @@
-<!DOCTYPE html>
-<html>
+@extends('layouts.app')
 
-<head>
-    <title>Gebeurtenissen</title>
-</head>
+@section('title', 'Gebeurtenissen')
 
-<body>
-    <h1>Gebeurtenissen</h1>
-    <ul>
+@section('content')
+    <h1 class="text-2xl font-semibold">Gebeurtenissen</h1>
+    <ul class="mt-4 list-disc space-y-3 pl-5">
         @foreach ($gebeurtenissen as $gebeurtenis)
             <li>
-                <a href="{{ route('gebeurtenissen.show', $gebeurtenis) }}">
+                <a href="{{ route('gebeurtenissen.show', $gebeurtenis) }}" class="text-blue-800 underline">
                     {{ $gebeurtenis->onderwerp }}
                 </a>
                 ({{ $gebeurtenis->artikelen_count }} artikelen)
@@ -22,6 +19,4 @@
             </li>
         @endforeach
     </ul>
-</body>
-
-</html>
+@endsection
