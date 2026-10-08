@@ -61,6 +61,10 @@ class ArtikelenOphalen extends Command
                 $tekst = (string) $item->description;
                 // HTML-entiteiten decoderen
                 $tekst = html_entity_decode($tekst, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                // "Get our" verwijderen
+                $tekst = preg_replace('/<li>\s*<p>\s*Get our\b.*?<\/li>/is', ' ', $tekst);
+                // "Listen to the podcast" verwijderen
+                $tekst = preg_replace('/<li>\s*<p>\s*Listen to the podcast\b.*?<\/li>/is', ' ', $tekst);
                 // HTML-tags verwijderen
                 $tekst = preg_replace('/<[^>]+>/', ' ', $tekst);
                 // meerdere spaties vervangen door een enkele spatie
@@ -69,12 +73,6 @@ class ArtikelenOphalen extends Command
                 $tekst = preg_replace('/Continue reading\.?\.?\.?\s*$/i', '', $tekst);
                 // "The post ... appeared first on ..." verwijderen
                 $tekst = preg_replace('/\s*The post .+? appeared first on .+$/i', '', $tekst);
-                // Guardian-promo: "Get our … email … free app or daily news podcast"
-                $tekst = preg_replace(
-                    '/\s*Get our (?:new political|breaking news) email,?\s*free app or daily news podcast\s*/i',
-                    ' ',
-                    $tekst
-                );
                 // spaties aan het begin en einde verwijderen
                 $tekst = trim($tekst);
 
