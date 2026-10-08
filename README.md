@@ -107,12 +107,15 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 
 ### Overzicht
 - De lijst toont alleen gebeurtenissen met minstens 2 artikelen, dezelfde drempel als `samenvattingen:genereren`. Groepen met 1 artikel staan wél in de tabel `gebeurtenissen`, niet op de pagina. Dat wijkt af van een 1-op-1-check tegen de hele tabel.
+- Per rij: onderwerp, de telling Links / Midden / Rechts, en wel of geen samenvatting. `withCount('artikelen')` haalt `artikelen_count` nog op, de lijst toont dat totaal niet.
+- De drie tellingen zijn extra `withCount`s met `whereHas('bron')`. Zelfde indeling als de kolommen: `left` en `left-center` zijn Links, `neutral` is Midden, `right-center` en `right` zijn Rechts. Geen extra AI.
 - `/` en `/gebeurtenissen` wijzen naar dezelfde `index`. `/gebeurtenissen` heet `gebeurtenissen.index`. `/` heeft geen naam: een named route wijst naar één URL. Elk onderwerp linkt naar `/gebeurtenissen/{id}` via `gebeurtenissen.show`.
 
 ### Detailpagina
 - Bakjes `Links`, `Midden` en `Rechts` zijn alleen weergave. `bronnen.orientatie` blijft de Media Bias Fact Check-label (`left`, `left-center`, `neutral`, `right-center`, `right`). Die ruwe waarde staat per artikel onder de titel, bij de bronnaam.
-- `groupBy` zet bakjes in de volgorde van het eerste artikel. `sortBy` daarna forceert Links, Midden, Rechts. Een bakje zonder artikelen krijgt geen kop.
-- Lijst en detail delen `resources/views/layouts/app.blade.php` (kop, footer, Tailwind). Elk samenvattingsveld is één `<p>`. In de huidige rijen zitten geen regeleinden, dus `nl2br` zou die tekst niet splitsen. Zonder `public/hot` (`npm run dev`) en zonder `public/build/manifest.json` (`npm run build`) laadt `@vite` niet. De pagina blijft dan HTML zonder Tailwind.
+- `groupBy` maakt alleen een bakje waar een artikel in zit. Daarna zet een `foreach` alsnog een lege Collection op Links, Midden en Rechts. `sortBy` forceert die volgorde. Een leeg bakje toont de kop plus "Geen artikelen in dit bakje." Een onbekende `orientatie` blijft een extra bakje en zakt via `?? 4` naar onderen.
+- De drie bakjes staan in een `grid`: één kolom onder 768px (`grid-cols-1`), drie kolommen daarboven (`md:grid-cols-3`).
+- Lijst en detail delen `resources/views/layouts/app.blade.php` (kop, footer, Tailwind). De body is `min-h-screen` en een kolom; `flex-1` op `main` zet lege hoogte in het midden, zodat de footer één regel onderaan het venster blijft. Elk samenvattingsveld is één `<p>`. In de huidige rijen zitten geen regeleinden, dus `nl2br` zou die tekst niet splitsen. Zonder `public/hot` (`npm run dev`) en zonder `public/build/manifest.json` (`npm run build`) laadt `@vite` niet. De pagina blijft dan HTML zonder Tailwind.
 
 ## Status en to-do
 
@@ -194,7 +197,7 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - [x] Controller `app/Http/Controllers/GebeurtenisController.php` (Laravel-conventie: een pagina hoort in een controller, niet in een closure)
 - [x] `index`-methode die gebeurtenissen (met minstens 2 artikelen) ophaalt, met het aantal artikelen en of er een samenvatting is
 - [x] Blade-view `resources/views/gebeurtenissen/index.blade.php`
-- [x] Per gebeurtenis: onderwerp, aantal artikelen, en of er al een samenvatting is
+- [x] Per gebeurtenis: onderwerp, aantal artikelen, en of er al een samenvatting is. Sinds bouwblok 9 toont de lijst de telling Links / Midden / Rechts in plaats van `artikelen_count`
 - [x] Gebeurtenissen zonder samenvatting blijven zichtbaar
 - [x] Getest in de browser: onderwerp, artikelcount en wel/geen samenvatting kloppen met phpMyAdmin (alleen groepen met 2+ artikelen)
 
@@ -207,7 +210,7 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - [x] Artikelen ophalen inclusief bron, via de relatie `artikelen.bron`
 - [x] Artikelen groeperen op `orientatie` van de bron
 - [x] Oriëntatie tonen zoals die in de database staat (`left-center`, `neutral`, `right-center`, `right`). Bundelen naar Links, Midden en Rechts is alleen weergave, de opgeslagen waarde blijft de Media Bias Fact Check-label
-- [x] Bakjes altijd in volgorde Links, Midden, Rechts (`sortBy` na `groupBy`)
+- [x] Bakjes altijd in volgorde Links, Midden, Rechts (`sortBy` na `groupBy`). Sinds bouwblok 9 is een leeg bakje zichtbaar, met een lege staat
 - [x] Per artikel: titel, bronnaam en link naar de originele URL
 - [x] Vanaf het overzicht linkt elk onderwerp naar deze pagina (`route('gebeurtenissen.show', $gebeurtenis)`)
 - [x] Getest met een gebeurtenis die een samenvatting én artikelen van meerdere bronnen heeft
@@ -222,11 +225,11 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - [x] Getest: `/` en `/gebeurtenissen/{id}` delen header/footer; zonder `public/hot` of `public/build/manifest.json` blijft de pagina HTML (geen `ViteManifestNotFoundException`)
 
 ### Bouwblok 9: Spectrum als drie kolommen
-- [ ] Detailpagina: drie kolommen Links / Midden / Rechts (stacked op smal scherm)
-- [ ] Lege kolom: duidelijke lege staat, geen crash
-- [ ] Per artikel: titel, bronnaam, ruwe MBFC-label, link (blijft)
-- [ ] Optioneel op het overzicht: mini-indicatie hoeveel artikelen links/midden/rechts (geen extra AI)
-- [ ] Getest met een groep die niet alle drie de bakjes vult
+- [x] Detailpagina: drie kolommen Links / Midden / Rechts (`md:grid-cols-3`, onder 768px onder elkaar)
+- [x] Lege kolom: kop plus "Geen artikelen in dit bakje.", geen crash
+- [x] Per artikel: titel, bronnaam, ruwe MBFC-label, link
+- [x] Op het overzicht: telling Links / Midden / Rechts via `withCount` en `whereHas` (geen extra AI). De regel met `artikelen_count` is uit de lijst gehaald
+- [x] Getest met een groep die niet alle drie de bakjes vult (`/gebeurtenissen/130` zonder Midden, `/gebeurtenissen/207` alleen Links)
 
 ### Bouwblok 10: Overzicht sorteren en pagineren
 - [ ] Sorteren: nieuwste gebeurtenis eerst (bijv. `updated_at` of max `artikelen.publicatiedatum`)

@@ -13,14 +13,15 @@
 
 
 
-<body class="bg-white text-gray-900">
+<body class="flex min-h-screen flex-col bg-white text-gray-900">
     <header class="border-b border-gray-200 px-4 py-4">
         <a href="{{ route('gebeurtenissen.index') }}" class="text-2xl font-semibold">MediaLens</a>
     </header>
 
-    <main class="mx-auto max-w-3xl px-4 py-6">
+    <main class="mx-auto w-full max-w-3xl flex-1 px-4 py-6">
         @yield('content')
     </main>
+
     <footer class="border-t border-gray-200 px-4 py-4 text-sm text-gray-600">
         MediaLens
     </footer>

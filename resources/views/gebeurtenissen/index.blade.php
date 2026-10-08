@@ -10,7 +10,12 @@
                 <a href="{{ route('gebeurtenissen.show', $gebeurtenis) }}" class="text-blue-800 underline">
                     {{ $gebeurtenis->onderwerp }}
                 </a>
-                ({{ $gebeurtenis->artikelen_count }} artikelen)
+                
+                <span class="block text-sm text-gray-600">
+                    Links {{ $gebeurtenis->links_count }},
+                    Midden {{ $gebeurtenis->midden_count }},
+                    Rechts {{ $gebeurtenis->rechts_count }}
+                </span>
                 @if ($gebeurtenis->samenvatting_exists)
                     wel samenvatting
                 @else

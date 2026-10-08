@@ -10,7 +10,24 @@ class GebeurtenisController extends Controller
     public function index()
     {
         $gebeurtenissen = Gebeurtenis::has('artikelen', '>=', 2)
-            ->withCount('artikelen')
+            ->withCount([
+                'artikelen',
+                'artikelen as links_count' => function ($query) {
+                    $query->whereHas('bron', function ($bron) {
+                        $bron->whereIn('orientatie', ['left', 'left-center']);
+                    });
+                },
+                'artikelen as midden_count' => function ($query) {
+                    $query->whereHas('bron', function ($bron) {
+                        $bron->where('orientatie', 'neutral');
+                    });
+                },
+                'artikelen as rechts_count' => function ($query) {
+                    $query->whereHas('bron', function ($bron) {
+                        $bron->whereIn('orientatie', ['right-center', 'right']);
+                    });
+                },
+            ])
             ->withExists('samenvatting')
             ->get();
 
@@ -36,6 +53,13 @@ class GebeurtenisController extends Controller
 
             return $bakjes[$orientatie] ?? $orientatie;
         });
+
+        foreach (['Links', 'Midden', 'Rechts'] as $naam) {
+            $artikelenPerOrientatie->put(
+                $naam,
+                $artikelenPerOrientatie->get($naam, collect())
+            );
+        }
 
         $volgorde = [
             'Links' => 1,

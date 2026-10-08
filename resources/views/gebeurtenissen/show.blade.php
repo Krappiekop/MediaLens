@@ -10,17 +10,26 @@
     <h1 class="mt-4 text-2xl font-semibold">{{ $gebeurtenis->onderwerp }}</h1>
 
     <h2 class="mt-8 text-xl font-semibold">Artikelen</h2>
-    @foreach ($artikelenPerOrientatie as $bakje => $artikelen)
-        <h3 class="mt-4 text-lg font-semibold">{{ $bakje }}</h3>
-        <ul class="mt-2 list-disc space-y-3 pl-5">
-            @foreach ($artikelen as $artikel)
-                <li>
-                    <a href="{{ $artikel->url }}" class="text-blue-800 underline">{{ $artikel->titel }}</a>
-                    <span class="block text-sm text-gray-600">{{ $artikel->bron->naam }}, {{ $artikel->bron->orientatie }}</span>
-                </li>
-            @endforeach
-        </ul>
-    @endforeach
+    <div class="mt-4 grid grid-cols-1 gap-6 md:grid-cols-3">
+        @foreach ($artikelenPerOrientatie as $bakje => $artikelen)
+            <section>
+                <h3 class="text-lg font-semibold">{{ $bakje }}</h3>
+                @if ($artikelen->isEmpty())
+                    <p class="mt-2 text-sm text-gray-600">Geen artikelen in dit bakje.</p>
+                @else
+                    <ul class="mt-2 list-disc space-y-3 pl-5">
+                        @foreach ($artikelen as $artikel)
+                            <li>
+                                <a href="{{ $artikel->url }}" class="text-blue-800 underline">{{ $artikel->titel }}</a>
+                                <span class="block text-sm text-gray-600">{{ $artikel->bron->naam }},
+                                    {{ $artikel->bron->orientatie }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </section>
+        @endforeach
+    </div>
 
     @if ($gebeurtenis->samenvatting)
         <h2 class="mt-8 text-xl font-semibold">Kernfeiten</h2>
