@@ -1,5 +1,5 @@
 # MediaLens
-AI-ondersteund systeem dat nieuwsartikelen over dezelfde gebeurtenis uit meerdere bronnen verzamelt, elke bron een politieke oriëntatie meegeeft, en een samenvatting genereert: kernfeiten die zonder de artikelen leesbaar zijn, betrokkenen als namenlijst, en waar de schrijfwijze overeenkomt of door framing verschilt. Gebouwd in Laravel. Overzicht en detailpagina van gebeurtenissen staan in de browser.
+AI-ondersteund systeem dat nieuwsartikelen over dezelfde gebeurtenis uit meerdere bronnen verzamelt, elke bron een politieke oriëntatie meegeeft, en een samenvatting genereert: kernfeiten die zonder de artikelen leesbaar zijn, betrokkenen als namenlijst, en waar de schrijfwijze overeenkomt of door framing verschilt. Gebouwd in Laravel. Overzicht, detailpagina en `/over` staan in de browser.
 
 ## Tech stack
 - Laravel (laravel/laravel), lokaal via XAMPP
@@ -18,9 +18,9 @@ AI-ondersteund systeem dat nieuwsartikelen over dezelfde gebeurtenis uit meerder
 7. `php artisan artikelen:ophalen` om artikelen binnen te halen en te groeperen. Per bron eerst `Ophalen bij …`, daarna één regel: hoeveel nieuwe artikelen, hoeveel daarvan een nieuwe gebeurtenis openden, en hoeveel aan een bestaande gebeurtenis gekoppeld zijn. Een URL die al in de database staat telt niet mee.
 8. `php artisan samenvattingen:genereren` voor alle gebeurtenissen, of `php artisan samenvattingen:genereren 5` voor één id
 9. Controleren in de Artisan-output en in phpMyAdmin (`artikelen`, `gebeurtenissen`, `samenvattingen`)
-10. `php artisan serve` en open `http://127.0.0.1:8000/` of `http://127.0.0.1:8000/gebeurtenissen`. De lijst toont 15 gebeurtenissen per pagina, nieuwste `artikelen.publicatiedatum` eerst. Filter Alle / Met samenvatting / Zonder samenvatting gaat via de querystring (`?filter=met` of `?filter=zonder`), zonder JavaScript. Een onderwerp opent `/gebeurtenissen/{id}`. In een tweede terminal: `npm run dev`. Dat schrijft `public/hot` en levert de CSS. Zonder dat proces, en zonder `public/build/manifest.json` van `npm run build`, blijft de pagina HTML. De `@if` rond `@vite` in `resources/views/layouts/app.blade.php` voorkomt dan een `ViteManifestNotFoundException`. XAMPP Apache draait PHP 8.2 en start Laravel 13 niet. De CLI-PHP (8.4+) wel. phpMyAdmin via XAMPP blijft werken.
+10. `php artisan serve` en open `http://127.0.0.1:8000/` of `http://127.0.0.1:8000/gebeurtenissen`. De lijst toont 15 gebeurtenissen per pagina, nieuwste `artikelen.publicatiedatum` eerst. Filter Alle / Met samenvatting / Zonder samenvatting gaat via de querystring (`?filter=met` of `?filter=zonder`), zonder JavaScript. Een onderwerp opent `/gebeurtenissen/{id}`. Footer **Over** en de disclaimer onder de kolommen gaan naar `/over`. In een tweede terminal: `npm run dev`. Dat schrijft `public/hot` en levert de CSS. Zonder dat proces, en zonder `public/build/manifest.json` van `npm run build`, blijft de pagina HTML. De `@if` rond `@vite` in `resources/views/layouts/app.blade.php` voorkomt dan een `ViteManifestNotFoundException`. XAMPP Apache draait PHP 8.2 en start Laravel 13 niet. De CLI-PHP (8.4+) wel. phpMyAdmin via XAMPP blijft werken.
 
-Of feeds en samenvattingen kloppen, zie je bij stap 7 tot en met 9. Of de lijst en de detailpagina kloppen, bij stap 10 plus phpMyAdmin (`gebeurtenissen`, `artikelen`, `samenvattingen`, `bronnen`). Tweede pagina en filter “zonder samenvatting” toetsen tegen dezelfde `ORDER BY` / `HAVING` in phpMyAdmin.
+Of feeds en samenvattingen kloppen, zie je bij stap 7 tot en met 9. Of de lijst en de detailpagina kloppen, bij stap 10 plus phpMyAdmin (`gebeurtenissen`, `artikelen`, `samenvattingen`, `bronnen`). Tweede pagina en filter “zonder samenvatting” toetsen tegen dezelfde `ORDER BY` / `HAVING` in phpMyAdmin. `/over` is vaste uitleg, geen databasecheck.
 
 De database hoeft niet handmatig overgezet te worden tussen machines, migraties en seeders bouwen hem overal identiek op.
 
@@ -125,7 +125,15 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - Bakjes `Links`, `Midden` en `Rechts` zijn alleen weergave. `bronnen.orientatie` blijft de Media Bias Fact Check-label (`left`, `left-center`, `neutral`, `right-center`, `right`). Die ruwe waarde staat per artikel onder de titel, bij de bronnaam.
 - `groupBy` maakt alleen een bakje waar een artikel in zit. Daarna zet een `foreach` alsnog een lege Collection op Links, Midden en Rechts. `sortBy` forceert die volgorde. Een leeg bakje toont de kop plus "Geen artikelen in dit bakje." Een onbekende `orientatie` blijft een extra bakje en zakt via `?? 4` naar onderen.
 - De drie bakjes staan in een `grid`: één kolom onder 768px (`grid-cols-1`), drie kolommen daarboven (`md:grid-cols-3`).
-- Lijst en detail delen `resources/views/layouts/app.blade.php` (kop, footer, Tailwind). De body is `min-h-screen` en een kolom; `flex-1` op `main` zet lege hoogte in het midden, zodat de footer één regel onderaan het venster blijft. Elk samenvattingsveld is één `<p>`. In de huidige rijen zitten geen regeleinden, dus `nl2br` zou die tekst niet splitsen. Zonder `public/hot` (`npm run dev`) en zonder `public/build/manifest.json` (`npm run build`) laadt `@vite` niet. De pagina blijft dan HTML zonder Tailwind.
+- Lijst, detail en `/over` delen `resources/views/layouts/app.blade.php` (kop, footer, Tailwind). De body is `min-h-screen` en een kolom; `flex-1` op `main` zet lege hoogte in het midden, zodat de footer één regel onderaan het venster blijft. Elk samenvattingsveld is één `<p>`. In de huidige rijen zitten geen regeleinden, dus `nl2br` zou die tekst niet splitsen. Zonder `public/hot` (`npm run dev`) en zonder `public/build/manifest.json` (`npm run build`) laadt `@vite` niet. De pagina blijft dan HTML zonder Tailwind.
+- Onder de drie kolommen, vóór de samenvatting: korte disclaimer plus link `route('over')`. Staat buiten de `@if` van de samenvatting, dus ook bij een gebeurtenis zonder samenvatting.
+
+### Transparantie
+- `/over` (`OverController@index`, named route `over`, view `resources/views/over.blade.php`) legt uit wat labels, groepen en samenvatting wel en niet zijn. Geen database, geen AI-call. De casus noemt ook `/transparantie`; de gekozen URL is `/over`.
+- Labels komen uit Media Bias Fact Check per bron, niet per artikel. Bakjes Links / Midden / Rechts zijn weergave. De ruwe label blijft in `bronnen.orientatie`.
+- De matcher groepeert op trefwoordoverlap in de eerste 40 woorden van de RSS-omschrijving, binnen één kalenderdag. Dat is geen bewijs van hetzelfde feit en geen oordeel over wat waar is.
+- De samenvatting komt van DeepSeek via OpenRouter en de Educom-proxy. Dat is een keus, geen neutrale arbiter. De casusformule “Groq/DeepSeek” dekt het model niet: Groq draait hier niet. MBFC-labels gaan niet per artikel mee in de prompt. `volledige_tekst` is de RSS-omschrijving.
+- De footer van de layout heeft een link **Over**. Zonder die link is `/over` alleen bereikbaar via de disclaimer of door de URL te typen.
 
 ## Status en to-do
 
@@ -235,7 +243,7 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - [x] Kop MediaLens, link naar het overzicht, op de detailpagina een terug-link via named route
 - [x] Typografie: samenvatting als aparte `<p>` per veld, artikellijst leesbaar op mobiel
 - [x] Named route voor `index`: `gebeurtenissen.index` op `/gebeurtenissen`
-- [x] Getest: `/` en `/gebeurtenissen/{id}` delen header/footer; zonder `public/hot` of `public/build/manifest.json` blijft de pagina HTML (geen `ViteManifestNotFoundException`)
+- [x] Getest: `/` en `/gebeurtenissen/{id}` delen header/footer; zonder `public/hot` of `public/build/manifest.json` blijft de pagina HTML (geen `ViteManifestNotFoundException`). Sinds bouwblok 11 deelt `/over` dezelfde layout; de footer heeft een link naar `route('over')`
 
 ### Bouwblok 9: Spectrum als drie kolommen
 - [x] Detailpagina: drie kolommen Links / Midden / Rechts (`md:grid-cols-3`, onder 768px onder elkaar)
@@ -253,10 +261,12 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - [x] Getest: tweede pagina, filter “zonder samenvatting”, volgorde klopt met phpMyAdmin (`ORDER BY nieuwste DESC, g.id DESC`)
 
 ### Bouwblok 11: Transparantie (ethiek uit de casus)
-- [ ] Route `/over` of `/transparantie` met uitleg: labels komen uit Media Bias Fact Check per bron, niet per artikel; bakjes zijn weergave
-- [ ] Benoem: matcher groepeert op trefwoordoverlap, niet op “dezelfde waarheid”; de AI kan zelf vooringenomen zijn; Groq/DeepSeek is een keus, geen neutrale arbiter
-- [ ] Op de detailpagina een korte disclaimer onder de kolommen, link naar die pagina
-- [ ] README: kopje “Transparantie” onder bekende beperkingen, zodat het niet alleen in de UI staat
+- [x] Route `/over` naar `OverController@index`, named route `over`, view `resources/views/over.blade.php`. Niet in `GebeurtenisController`: die pagina heeft geen gebeurtenis-query
+- [x] Uitleg: labels uit Media Bias Fact Check per bron, niet per artikel; bakjes zijn weergave
+- [x] Benoem: matcher groepeert op trefwoordoverlap, niet op “dezelfde waarheid”; de AI kan zelf vooringenomen zijn; DeepSeek via OpenRouter is een keus, geen neutrale arbiter (geen Groq in deze app)
+- [x] Op de detailpagina een korte disclaimer onder de kolommen, link `route('over')`. Ook zichtbaar zonder samenvatting
+- [x] Footer-link **Over** in de layout, zodat `/over` ook vanaf het overzicht bereikbaar is
+- [x] README: kopje “Transparantie” onder bekende beperkingen, zodat het niet alleen in de UI staat
 
 ### Bouwblok 12: Groeperen en onderwerp verbeteren
 - [ ] `onderwerp` afleiden van gedeelde trefwoorden of de “meest centrale” titel, niet blind het eerste artikel

@@ -11,8 +11,6 @@
     @endif
 </head>
 
-
-
 <body class="flex min-h-screen flex-col bg-white text-gray-900">
     <header class="border-b border-gray-200 px-4 py-4">
         <a href="{{ route('gebeurtenissen.index') }}" class="text-2xl font-semibold">MediaLens</a>
@@ -24,6 +22,7 @@
 
     <footer class="border-t border-gray-200 px-4 py-4 text-sm text-gray-600">
         MediaLens
+        <a href="{{ route('over') }}" class="ml-4 text-blue-800 underline">Over</a>
     </footer>
 </body>
 

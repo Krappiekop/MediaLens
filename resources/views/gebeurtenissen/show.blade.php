@@ -30,6 +30,12 @@
             </section>
         @endforeach
     </div>
+    
+    <p class="mt-6 text-sm text-gray-600">
+        De bakjes Links, Midden en Rechts zijn weergave. De labels komen uit Media Bias Fact Check per bron, niet per
+        artikel.
+        <a href="{{ route('over') }}" class="text-blue-800 underline">Hoe MediaLens werkt</a>
+    </p>
 
     @if ($gebeurtenis->samenvatting)
         <h2 class="mt-8 text-xl font-semibold">Kernfeiten</h2>
