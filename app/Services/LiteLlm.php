@@ -37,7 +37,7 @@ class LiteLlm
         }
 
         // Maak de HTTP-aanvraag
-        $response = Http::timeout(60)
+        $response = Http::timeout(120)
             ->withHeaders([
                 'x-litellm-api-key' => config('services.litellm.api_key'),
             ])

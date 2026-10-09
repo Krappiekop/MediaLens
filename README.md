@@ -1,5 +1,5 @@
 # MediaLens
-AI-ondersteund systeem dat nieuwsartikelen over dezelfde gebeurtenis uit meerdere bronnen verzamelt, elke bron een politieke oriëntatie meegeeft, en een neutrale samenvatting genereert die laat zien waar bronnen van mening verschillen. Gebouwd in Laravel. Overzicht en detailpagina van gebeurtenissen staan in de browser.
+AI-ondersteund systeem dat nieuwsartikelen over dezelfde gebeurtenis uit meerdere bronnen verzamelt, elke bron een politieke oriëntatie meegeeft, en een samenvatting genereert: kernfeiten die zonder de artikelen leesbaar zijn, betrokkenen als namenlijst, en waar de schrijfwijze overeenkomt of door framing verschilt. Gebouwd in Laravel. Overzicht en detailpagina van gebeurtenissen staan in de browser.
 
 ## Tech stack
 - Laravel (laravel/laravel), lokaal via XAMPP
@@ -18,9 +18,9 @@ AI-ondersteund systeem dat nieuwsartikelen over dezelfde gebeurtenis uit meerder
 7. `php artisan artikelen:ophalen` om artikelen binnen te halen en te groeperen. Per bron eerst `Ophalen bij …`, daarna één regel: hoeveel nieuwe artikelen, hoeveel daarvan een nieuwe gebeurtenis openden, en hoeveel aan een bestaande gebeurtenis gekoppeld zijn. Een URL die al in de database staat telt niet mee.
 8. `php artisan samenvattingen:genereren` voor alle gebeurtenissen, of `php artisan samenvattingen:genereren 5` voor één id
 9. Controleren in de Artisan-output en in phpMyAdmin (`artikelen`, `gebeurtenissen`, `samenvattingen`)
-10. `php artisan serve` en open `http://127.0.0.1:8000/` of `http://127.0.0.1:8000/gebeurtenissen`. Een onderwerp opent `/gebeurtenissen/{id}`. In een tweede terminal: `npm run dev`. Dat schrijft `public/hot` en levert de CSS. Zonder dat proces, en zonder `public/build/manifest.json` van `npm run build`, blijft de pagina HTML. De `@if` rond `@vite` in `resources/views/layouts/app.blade.php` voorkomt dan een `ViteManifestNotFoundException`. XAMPP Apache draait PHP 8.2 en start Laravel 13 niet. De CLI-PHP (8.4+) wel. phpMyAdmin via XAMPP blijft werken.
+10. `php artisan serve` en open `http://127.0.0.1:8000/` of `http://127.0.0.1:8000/gebeurtenissen`. De lijst toont 15 gebeurtenissen per pagina, nieuwste `artikelen.publicatiedatum` eerst. Filter Alle / Met samenvatting / Zonder samenvatting gaat via de querystring (`?filter=met` of `?filter=zonder`), zonder JavaScript. Een onderwerp opent `/gebeurtenissen/{id}`. In een tweede terminal: `npm run dev`. Dat schrijft `public/hot` en levert de CSS. Zonder dat proces, en zonder `public/build/manifest.json` van `npm run build`, blijft de pagina HTML. De `@if` rond `@vite` in `resources/views/layouts/app.blade.php` voorkomt dan een `ViteManifestNotFoundException`. XAMPP Apache draait PHP 8.2 en start Laravel 13 niet. De CLI-PHP (8.4+) wel. phpMyAdmin via XAMPP blijft werken.
 
-Of feeds en samenvattingen kloppen, zie je bij stap 7 tot en met 9. Of de lijst en de detailpagina kloppen, bij stap 10 plus phpMyAdmin (`gebeurtenissen`, `artikelen`, `samenvattingen`, `bronnen`).
+Of feeds en samenvattingen kloppen, zie je bij stap 7 tot en met 9. Of de lijst en de detailpagina kloppen, bij stap 10 plus phpMyAdmin (`gebeurtenissen`, `artikelen`, `samenvattingen`, `bronnen`). Tweede pagina en filter “zonder samenvatting” toetsen tegen dezelfde `ORDER BY` / `HAVING` in phpMyAdmin.
 
 De database hoeft niet handmatig overgezet te worden tussen machines, migraties en seeders bouwen hem overal identiek op.
 
@@ -103,17 +103,23 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 
 ### Samenvatting
 - De AI kan zelf ook vooringenomen zijn.
+- De vier velden: `kernfeiten` is zelfstandig leesbaar (waar gaat het over, daarna de feiten), zonder bronnamen. `betrokkenen` is een kommagescheiden namenlijst, geen zin. `overeenstemming` en `verschil` gaan over schrijfwijze (toon, woordkeuze, nadruk, weglatingen), niet over een catalogus van gedeelde kloktijden. Bronnen bij naam, geen MBFC-labels (`left`, `right`, `neutral`) in de output. Oriëntatie gaat nog steeds niet per artikel mee in de prompt.
+- Dat wijkt af van de eerste bouwblok-5-prompt (neutrale feiten vs. welke bron welk feit noemt) en schuift `overeenstemming`/`verschil` dichter naar de framing-vraag van bouwblok 4. De AI kiest zelf geen partij.
+- Een promptwijziging vernieuwt bestaande rijen niet. `slaOp()` slaat over als er al een samenvatting is en er geen nieuwer artikel bij is. Rij in `samenvattingen` weg, daarna `php artisan samenvattingen:genereren {id}`.
 - `samenvat()` stuurt een `json_schema` mee met de vier verplichte string-velden. Een lege string voldoet aan dat schema. `slaOp()` weigert een leeg veld alsnog, en het command probeert die gebeurtenis opnieuw.
 - `samenvattingen:genereren` probeert een gebeurtenis maximaal 3 keer. Ongeldige JSON gooit een `RuntimeException` in `slaOp()`, vóór `create()` of `update()`. Een LLM die langer duurt dan `Http::timeout(60)` gooit een `ConnectionException`. Na 3 mislukte pogingen slaat het command die gebeurtenis over en gaat verder. Een andere exception stopt het command nog wel. Elke timeout-poging kan 60 seconden duren.
 - Bij een HTTP-fout geeft `LiteLlm::vraag()` een lege string terug. Het command meldt dan een ontbrekend veld. De statuscode van de proxy staat daar niet bij.
-- Prompt caching bij DeepSeek is automatisch. Het vaste system-bericht staat vooraan, de artikelen in het user-bericht. `cached_tokens` wordt gelogd in `storage/logs/laravel.log`. Een hit zie je vooral als dezelfde prompt terugkomt, zoals een retry of dezelfde gebeurtenis opnieuw samenvatten. Verschillende gebeurtenissen blijven meestal op `0`, omdat hun artikeltekst meteen afwijkt. `migrate:fresh` leegt alleen de database, niet de cache bij de provider.
+- Prompt caching bij DeepSeek is automatisch. Het vaste system-bericht staat vooraan, de artikelen in het user-bericht. `cached_tokens` wordt gelogd in `storage/logs/laravel.log`. Een hit zie je vooral als dezelfde prompt terugkomt, zoals een retry of dezelfde gebeurtenis opnieuw samenvatten. Na een wijziging in `$systeem` is die prefix nieuw, dus `cached_tokens` begint weer laag. Verschillende gebeurtenissen blijven meestal op `0`, omdat hun artikeltekst meteen afwijkt. `migrate:fresh` leegt alleen de database, niet de cache bij de provider.
 - `LiteLlm` stuurt `thinking.type`, `reasoning_effort` en `temperature` mee uit `.env`. Lege regels vallen terug op `enabled`, `high` en `1`. Bij thinking aan heeft `temperature` geen effect; `top_p` speelt alleen tussen 0,95 en 1. Effort `max` kan de timeout van 60 seconden raken. Of de Educom-proxy die velden doorgeeft, zie je aan `reasoning_content` of `reasoning_tokens` in de response, niet alleen aan een 200.
 
 ### Overzicht
 - De lijst toont alleen gebeurtenissen met minstens 2 artikelen, dezelfde drempel als `samenvattingen:genereren`. Groepen met 1 artikel staan wél in de tabel `gebeurtenissen`, niet op de pagina. Dat wijkt af van een 1-op-1-check tegen de hele tabel.
-- Per rij: onderwerp, de telling Links / Midden / Rechts, en wel of geen samenvatting. `withCount('artikelen')` haalt `artikelen_count` nog op, de lijst toont dat totaal niet.
+- Sorteren op `withMax('artikelen', 'publicatiedatum')`, daarna `id` DESC als tiebreaker. `publicatiedatum` is een `date`, geen tijdstip: zonder tweede `orderBy` is de volgorde binnen dezelfde dag willekeurig en wijkt phpMyAdmin af van de pagina. `updated_at` van de gebeurtenis beweegt niet als de matcher een artikel aan een bestaande groep koppelt, dus die kolom is geen “nieuwste nieuws”.
+- `paginate(15)` in plaats van `get()`. Paginalinks via `$gebeurtenissen->links()`. `withQueryString()` houdt `?filter=` vast op pagina 2.
+- Filter via querystring, geen JavaScript: geen `filter` is Alles, `?filter=met` is `has('samenvatting')`, `?filter=zonder` is `doesntHave('samenvatting')`. Onbekende waarden gedragen zich als Alles. Extra keys in `route('gebeurtenissen.index', ['filter' => 'zonder'])` worden querystring, omdat `filter` geen routeparameter is.
+- Per rij: onderwerp en de telling Links / Midden / Rechts. Wel of geen samenvatting staat niet meer per rij; dat is het filter. `withExists('samenvatting')` is daarom weg. `withCount('artikelen')` haalt `artikelen_count` nog op, de lijst toont dat totaal niet.
 - De drie tellingen zijn extra `withCount`s met `whereHas('bron')`. Zelfde indeling als de kolommen: `left` en `left-center` zijn Links, `neutral` is Midden, `right-center` en `right` zijn Rechts. Geen extra AI.
-- `/` en `/gebeurtenissen` wijzen naar dezelfde `index`. `/gebeurtenissen` heet `gebeurtenissen.index`. `/` heeft geen naam: een named route wijst naar één URL. Elk onderwerp linkt naar `/gebeurtenissen/{id}` via `gebeurtenissen.show`.
+- `/` en `/gebeurtenissen` wijzen naar dezelfde `index`. `/gebeurtenissen` heet `gebeurtenissen.index`. `/` heeft geen naam: een named route wijst naar één URL. Elk onderwerp linkt naar `/gebeurtenissen/{id}` via `gebeurtenissen.show`. Filterlinks gebruiken de named route, zodat ze op `/gebeurtenissen?filter=…` landen, niet op `/?filter=…`.
 
 ### Detailpagina
 - Bakjes `Links`, `Midden` en `Rechts` zijn alleen weergave. `bronnen.orientatie` blijft de Media Bias Fact Check-label (`left`, `left-center`, `neutral`, `right-center`, `right`). Die ruwe waarde staat per artikel onder de titel, bij de bronnaam.
@@ -197,15 +203,16 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - [x] Prompt caching (vast system-bericht vooraan, artikelen in het user-bericht; `cached_tokens` in de log)
 - [x] Input- en outputtokens loggen, plus een kostenschatting uit `.env`
 - [x] LLM-parameters via `.env`: `LITELLM_THINKING_TYPE`, `LITELLM_REASONING_EFFORT`, `LITELLM_TEMPERATURE` (leeg = DeepSeek-standaard)
+- [x] Prompt aangescherpt: kernfeiten zelfstandig leesbaar, betrokkenen als kommagescheiden namen, overeenstemming/verschil over schrijfwijze. Geen MBFC-labels in de prompt of in die twee velden
 
 ### Bouwblok 6: Overzicht van gebeurtenissen
 - [x] Route `/` en `/gebeurtenissen` in `routes/web.php` naar `GebeurtenisController@index`, in plaats van de standaard welkomstpagina
 - [x] Controller `app/Http/Controllers/GebeurtenisController.php` (Laravel-conventie: een pagina hoort in een controller, niet in een closure)
 - [x] `index`-methode die gebeurtenissen (met minstens 2 artikelen) ophaalt, met het aantal artikelen en of er een samenvatting is
 - [x] Blade-view `resources/views/gebeurtenissen/index.blade.php`
-- [x] Per gebeurtenis: onderwerp, aantal artikelen, en of er al een samenvatting is. Sinds bouwblok 9 toont de lijst de telling Links / Midden / Rechts in plaats van `artikelen_count`
-- [x] Gebeurtenissen zonder samenvatting blijven zichtbaar
-- [x] Getest in de browser: onderwerp, artikelcount en wel/geen samenvatting kloppen met phpMyAdmin (alleen groepen met 2+ artikelen)
+- [x] Per gebeurtenis: onderwerp, aantal artikelen, en of er al een samenvatting is. Sinds bouwblok 9 toont de lijst de telling Links / Midden / Rechts in plaats van `artikelen_count`. Sinds bouwblok 10 is wel/geen samenvatting het filter op de lijst, niet meer tekst per rij
+- [x] Gebeurtenissen zonder samenvatting blijven zichtbaar (filter Alle of Zonder)
+- [x] Getest in de browser: onderwerp en telling kloppen met phpMyAdmin (alleen groepen met 2+ artikelen)
 
 ### Bouwblok 7: Detailpagina van één gebeurtenis
 - [x] Route `/gebeurtenissen/{gebeurtenis}` naar een `show`-methode op dezelfde controller
@@ -238,11 +245,12 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - [x] Getest met een groep die niet alle drie de bakjes vult (`/gebeurtenissen/130` zonder Midden, `/gebeurtenissen/207` alleen Links)
 
 ### Bouwblok 10: Overzicht sorteren en pagineren
-- [ ] Sorteren: nieuwste gebeurtenis eerst (bijv. `updated_at` of max `artikelen.publicatiedatum`)
-- [ ] Laravel `paginate()` in `index()`, links in Blade
-- [ ] Filter: alle / alleen mét samenvatting / alleen zonder (querystring, geen JavaScript-plicht)
-- [ ] Gebeurtenissen met 1 artikel blijven buiten de lijst (zelfde drempel als bouwblok 5/6)
-- [ ] Getest: tweede pagina, filter “zonder samenvatting”, volgorde klopt met phpMyAdmin
+- [x] Sorteren: nieuwste `artikelen.publicatiedatum` eerst (`withMax`), daarna `id` DESC als tiebreaker. Niet `updated_at` van de gebeurtenis
+- [x] Laravel `paginate(15)` in `index()`, `$gebeurtenissen->links()` in Blade, `withQueryString()` zodat het filter op pagina 2 blijft
+- [x] Filter: alle / alleen mét samenvatting / alleen zonder (querystring `?filter=met` of `?filter=zonder`, geen JavaScript)
+- [x] Gebeurtenissen met 1 artikel blijven buiten de lijst (zelfde drempel als bouwblok 5/6)
+- [x] Wel/geen samenvatting per rij weggehaald; `withExists('samenvatting')` ook, die kolom werd nergens meer gelezen
+- [x] Getest: tweede pagina, filter “zonder samenvatting”, volgorde klopt met phpMyAdmin (`ORDER BY nieuwste DESC, g.id DESC`)
 
 ### Bouwblok 11: Transparantie (ethiek uit de casus)
 - [ ] Route `/over` of `/transparantie` met uitleg: labels komen uit Media Bias Fact Check per bron, niet per artikel; bakjes zijn weergave
@@ -260,7 +268,7 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 
 ### Later / optioneel
 - [ ] Scheduler: `artikelen:ophalen` + `samenvattingen:genereren` via Laravel `Schedule`
-- [ ] Framing-analyse uit bouwblok 4 opslaan en tonen (`vergelijk()` is nu uitgecommentarieerd)
+- [ ] Framing-analyse uit bouwblok 4 als apart veld opslaan en tonen (`vergelijk()` is uitgecommentarieerd; deel van die vraag zit nu in overeenstemming/verschil van `samenvat()`)
 - [ ] Feature-tests voor `index` / `show`
 - [ ] Embeddings + vectorsimilariteit i.p.v. trefwoordoverlap (casus noemt dit als mogelijke clustering)
 - [ ] Volledige artikeltekst via web scraping of een nieuws-API i.p.v. de RSS-omschrijving in `volledige_tekst`

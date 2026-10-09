@@ -45,15 +45,24 @@ class ArtikelVergelijker
 
     public function samenvat(Gebeurtenis $gebeurtenis): array
     {
-        // Haal de artikelen tekst op
-        $artikelen = $this->artikelenTekst($gebeurtenis);
+
 
         // Maak het systeem bericht
         $systeem = "Hieronder volgen nieuwsartikelen over dezelfde gebeurtenis.\n\n"
-            . "Schrijf een neutrale samenvatting die begrijpelijk is voor een breed publiek.\n"
-            . "Gebruik geen politieke labels en kies geen partij.\n"
-            . "Schrijf in het Nederlands.\n"
-            . "Noem bij de overeenstemming en verschil de namen van de bronnen.";
+            . "Schrijf in het Nederlands. Kies zelf geen partij.\n\n"
+            . "kernfeiten: één zelfstandig leesbaar stuk. Begin met waar de gebeurtenis over gaat. "
+            . "Daarna alleen de feiten die een lezer nodig heeft om het te begrijpen, zonder de artikelen te openen. "
+            . "Geen bronnamen, geen analyse van toon.\n\n"
+            . "betrokkenen: alleen namen en rollen, gescheiden door komma's. "
+            . "Geen zinnen. Bijvoorbeeld: ICE-agent, man (niet bij naam genoemd), vijfjarige zoon, DHS, burgemeester Zohran Mamdani.\n\n"
+            . "overeenstemming: analyseer de schrijfwijze, niet de gedeelde feiten. "
+            . "Waar lijken toon, woordkeuze en nadruk op elkaar, ook over politieke verschillen heen? Noem bronnen bij naam.\n\n"
+            . "verschil: analyseer hoe woordkeuze, nadruk en weglatingen de gebeurtenis kleuren. "
+            . "Koppel dat aan hoe bronnen schrijven (bijvoorbeeld beladen termen, wie als dader of slachtoffer wordt neergezet, welke details extra aandacht krijgen). "
+            . "Noem bronnen bij naam. Gebruik geen labels als left, right of neutral.";
+
+        // Haal de artikelen tekst op
+        $artikelen = $this->artikelenTekst($gebeurtenis);
 
         // Vraag de AI om een samenvatting te genereren met een JSON schema
         $antwoord = (new LiteLlm)->vraag($systeem, $artikelen, [
@@ -73,7 +82,7 @@ class ArtikelVergelijker
                     'additionalProperties' => false,
                 ],
             ],
-        ], $gebeurtenis->id); 
+        ], $gebeurtenis->id);
 
         // Controleer of het antwoord een geldige JSON is
         $data = json_decode($antwoord, true);

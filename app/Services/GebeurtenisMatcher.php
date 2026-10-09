@@ -27,7 +27,7 @@ class GebeurtenisMatcher
         return implode(' ', array_slice($woorden, 0, 40));
     }
 
-    private int $minimaleOverlap = 5;   // <--- minimale hoeveelheid trefwoorden die in beide teksten moeten voorkomen om een match te hebben
+    private int $minimaleOverlap = 6;   // <--- minimale hoeveelheid trefwoorden die in beide teksten moeten voorkomen om een match te hebben
     private int $maxDagen = 1;
     private ?RakePlus $rake = null;
     private array $trefwoordCache = [];

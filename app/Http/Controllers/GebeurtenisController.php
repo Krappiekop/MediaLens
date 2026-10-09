@@ -7,9 +7,11 @@ use App\Models\Gebeurtenis;
 
 class GebeurtenisController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $gebeurtenissen = Gebeurtenis::has('artikelen', '>=', 2)
+        $filter = $request->query('filter');
+
+        $query = Gebeurtenis::has('artikelen', '>=', 2)
             ->withCount([
                 'artikelen',
                 'artikelen as links_count' => function ($query) {
@@ -28,8 +30,17 @@ class GebeurtenisController extends Controller
                     });
                 },
             ])
-            ->withExists('samenvatting')
-            ->get();
+            ->withMax('artikelen', 'publicatiedatum')
+            ->orderByDesc('artikelen_max_publicatiedatum')
+            ->orderByDesc('id');
+
+        if ($filter === 'met') {
+            $query->has('samenvatting');
+        } elseif ($filter === 'zonder') {
+            $query->doesntHave('samenvatting');
+        }
+
+        $gebeurtenissen = $query->paginate(15)->withQueryString();
 
         return view('gebeurtenissen.index', [
             'gebeurtenissen' => $gebeurtenissen,
