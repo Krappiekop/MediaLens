@@ -20,9 +20,13 @@
                     <ul class="mt-2 list-disc space-y-3 pl-5">
                         @foreach ($artikelen as $artikel)
                             <li>
-                                <a href="{{ $artikel->url }}" class="text-blue-800 underline">{{ $artikel->titel }}</a>
-                                <span class="block text-sm text-gray-600">{{ $artikel->bron->naam }},
-                                    {{ $artikel->bron->orientatie }}</span>
+                                <a href="{{ $artikel->url ?? '#' }}" class="text-blue-800 underline">{{ $artikel->titel }}</a>
+                                @if ($artikel->bron)
+                                    <span class="block text-sm text-gray-600">{{ $artikel->bron->naam }},
+                                        {{ $artikel->bron->orientatie }}</span>
+                                @else
+                                    <span class="block text-sm text-gray-600">Bron onbekend</span>
+                                @endif
                             </li>
                         @endforeach
                     </ul>

@@ -276,6 +276,24 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - [ ] Getest op een bekende ketting-fout (digest vs echt nieuws) en op een goede groep (meerdere bronnen, zelfde feit)
 - [ ] Afwijking van de casus blijft: matching op omschrijving, niet op titel
 
+### Bouwblok 13: Feedback krijgen en verwerken met AI
+- [x] AI gebruikt om de README, notities en projectstructuur te reviewen en de belangrijkste risico's te benoemen
+- [x] AI-feedback gebruikt om de eerste failing test te analyseren en de echte oorzaak te vinden: testdatabase was niet goed ingesteld
+- [x] `RefreshDatabase` toegevoegd aan `ExampleTest` zodat Laravel de SQLite-testdatabase correct opbouwt per test
+- [x] Maatwerk-feedback toegepast op `Bron`-model: `fillable` toegevoegd zodat testdata zonder mass-assignment-fout kan worden aangemaakt
+- [x] Extra feature-test toegevoegd voor de overzichtspagina met echte sample-data
+- [x] AI-audit gebruikt om de LLM-call te verbeteren: duidelijke fouten bij proxy-fouten, lege response en ontbrekende config
+- [x] Fail-fast check toegevoegd in `LiteLlm`: `base_url`, `api_key` en `model` moeten aanwezig zijn voordat de API wordt aangeroepen
+- [x] Extra test toegevoegd voor een 502-proxyfout en een incomplete LLM-configuratie
+- [x] Detailpagina robuuster gemaakt bij lege of incomplete data: `null`-check voor artikelen en bron-orientatie, geen crash bij lege bakjes
+- [x] View aangepast zodat een artikel zonder bron nog steeds veilig renderen kan met een fallback-tekst
+- [x] AI-output validatie opgescherpt in `ArtikelVergelijker`: veldwaarden moeten echte tekststrings zijn, geen arrays of lege waarden
+- [x] Retry-loop in `SamenvattingenGenereren` aangepast zodat bekende netwerk- en runtimefouten opnieuw worden geprobeerd, terwijl onverwachte exceptions expliciet worden gelogd en niet stilzwijgend worden doorgegeven
+- [x] Extra regressietesten toegevoegd voor ontbrekende bron-data en ongeldige AI-output
+- [x] Verificatie uitgevoerd met `php artisan test --filter=ExampleTest`; de suite draait groen
+- [x] AI-feedback verwerkt als echte hardening pass in plaats van alleen “blind” codewijzigingen
+- [ ] Latere pass gebruiken voor review van matcher-, controller- en summary-kwaliteit met AI-gestuurde feedbackloops
+
 ### Later / optioneel
 - [ ] Scheduler: `artikelen:ophalen` + `samenvattingen:genereren` via Laravel `Schedule`
 - [ ] Framing-analyse uit bouwblok 4 als apart veld opslaan en tonen (`vergelijk()` is uitgecommentarieerd; deel van die vraag zit nu in overeenstemming/verschil van `samenvat()`)

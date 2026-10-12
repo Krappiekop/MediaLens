@@ -45,8 +45,14 @@ class SamenvattingenGenereren extends Command
                     $gelukt = true;
                     break;
 
-                } catch (ConnectionException | \RuntimeException $e) { // Timeout of ongeldige JSON
+                } catch (ConnectionException $e) {
                     $this->warn("{$gebeurtenis->id}: poging {$poging} mislukt ({$e->getMessage()})");
+                } catch (\RuntimeException $e) {
+                    $this->warn("{$gebeurtenis->id}: poging {$poging} mislukt ({$e->getMessage()})");
+                } catch (\Throwable $e) {
+                    $this->error("{$gebeurtenis->id}: onverwachte fout ({$e->getMessage()})");
+                    $gelukt = false;
+                    break;
                 }
             }
 

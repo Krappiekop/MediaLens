@@ -59,13 +59,19 @@ class GebeurtenisController extends Controller
             'right' => 'Rechts',
         ];
 
-        $artikelenPerOrientatie = $gebeurtenis->artikelen->groupBy(function ($artikel) use ($bakjes) {
-            $orientatie = $artikel->bron->orientatie;
+        $artikelen = $gebeurtenis->artikelen ?? collect();
+
+        $artikelenPerOrientatie = $artikelen->groupBy(function ($artikel) use ($bakjes) {
+            $orientatie = $artikel?->bron?->orientatie;
+
+            if ($orientatie === null || $orientatie === '') {
+                return 'Onbekend';
+            }
 
             return $bakjes[$orientatie] ?? $orientatie;
         });
 
-        foreach (['Links', 'Midden', 'Rechts'] as $naam) {
+        foreach (['Links', 'Midden', 'Rechts', 'Onbekend'] as $naam) {
             $artikelenPerOrientatie->put(
                 $naam,
                 $artikelenPerOrientatie->get($naam, collect())
@@ -76,9 +82,10 @@ class GebeurtenisController extends Controller
             'Links' => 1,
             'Midden' => 2,
             'Rechts' => 3,
+            'Onbekend' => 4,
         ];
         $artikelenPerOrientatie = $artikelenPerOrientatie->sortBy(function ($artikelen, $bakje) use ($volgorde) {
-            return $volgorde[$bakje] ?? 4;
+            return $volgorde[$bakje] ?? 5;
         });
 
         return view('gebeurtenissen.show', [

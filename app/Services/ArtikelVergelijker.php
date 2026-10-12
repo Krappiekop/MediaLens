@@ -111,10 +111,10 @@ class ArtikelVergelijker
         $data = $this->samenvat($gebeurtenis);
 
         // Controleer of de JSON geldig is
-        // Stop als er een veld ontbreekt
+        // Stop als er een veld ontbreekt of het geen tekstveld is
         foreach (['kernfeiten', 'betrokkenen', 'overeenstemming', 'verschil'] as $veld) {
-            if (!isset($data[$veld]) || trim((string) $data[$veld]) === '') {
-                throw new \RuntimeException("Ongeldige JSON van het model: veld {$veld} ontbreekt.");
+            if (!array_key_exists($veld, $data) || !is_string($data[$veld]) || trim($data[$veld]) === '') {
+                throw new \RuntimeException("Ongeldige JSON van het model: veld {$veld} ontbreekt of is geen tekstveld.");
             }
         }
 
