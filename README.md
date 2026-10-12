@@ -304,8 +304,8 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - [x] Verdelingsbalk op het overzicht beperken tot de breedte van de Links/Midden/Rechts-labels
 - [ ] Layout testen op mobiel en desktop, inclusief artikelen zonder afbeelding, lange koppen en lege perspectiefkolommen
 - [ ] Controleren op toegankelijkheid en stabiele layout: voldoende contrast, toetsenbordbediening, alt-tekst en geen verspringende inhoud bij het laden van afbeeldingen
-- [ ] pagina waar je alle artikelen kan zien (vooral die zonder gebeurtenis) (hier mogen wel de afbeeldingen bij staan per artikel als die dat hebben)
-- [ ] zoeken en filteren toevoegen (aan gebeurtenissen en artikelen pagina)
+- [x] Pagina `/artikelen` met alle artikelen, inclusief artikelen zonder gebeurtenis; afbeeldingen en credits worden getoond waar beschikbaar
+- [x] Zoeken en filteren op gebeurtenissen en artikelen: zoekterm, samenvattingsstatus en perspectief; op artikelen ook wel/geen gebeurtenis
 
 ### Later / optioneel
 - [ ] Scheduler: `artikelen:ophalen` + `samenvattingen:genereren` via Laravel `Schedule`

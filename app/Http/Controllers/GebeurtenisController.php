@@ -3,13 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\Gebeurtenis;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
 class GebeurtenisController extends Controller
 {
     public function index(Request $request)
     {
+        $zoekterm = $request->query('q');
+        $zoekterm = is_string($zoekterm) ? trim($zoekterm) : '';
         $filter = $request->query('filter');
+        $filter = in_array($filter, ['met', 'zonder'], true) ? $filter : 'alle';
+        $perspectief = $request->query('perspectief');
+        $perspectief = in_array($perspectief, ['links', 'midden', 'rechts'], true) ? $perspectief : 'alle';
 
         $query = Gebeurtenis::has('artikelen', '>=', 2)
             ->withCount([
@@ -41,17 +47,43 @@ class GebeurtenisController extends Controller
             ->orderByDesc('artikelen_max_publicatiedatum')
             ->orderByDesc('id');
 
+        if ($zoekterm !== '') {
+            $query->where(function (Builder $query) use ($zoekterm): void {
+                $query->where('onderwerp', 'like', "%{$zoekterm}%")
+                    ->orWhereHas('artikelen', function (Builder $artikelQuery) use ($zoekterm): void {
+                        $artikelQuery->where('titel', 'like', "%{$zoekterm}%");
+                    });
+            });
+        }
+
         if ($filter === 'met') {
             $query->has('samenvatting');
         } elseif ($filter === 'zonder') {
             $query->doesntHave('samenvatting');
         }
 
+        $orientaties = match ($perspectief) {
+            'links' => ['left', 'left-center'],
+            'midden' => ['neutral'],
+            'rechts' => ['right-center', 'right'],
+            default => [],
+        };
+
+        if ($orientaties !== []) {
+            $query->whereHas('artikelen', function (Builder $artikelQuery) use ($orientaties): void {
+                $artikelQuery->whereHas('bron', function (Builder $bronQuery) use ($orientaties): void {
+                    $bronQuery->whereIn('orientatie', $orientaties);
+                });
+            });
+        }
+
         $gebeurtenissen = $query->paginate(15)->withQueryString();
 
         return view('gebeurtenissen.index', [
             'gebeurtenissen' => $gebeurtenissen,
+            'zoekterm' => $zoekterm,
             'filter' => $filter,
+            'perspectief' => $perspectief,
         ]);
     }
 

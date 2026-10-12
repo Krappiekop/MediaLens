@@ -18,7 +18,10 @@
                 <span class="h-9 w-1.5 rounded-sm bg-accent" aria-hidden="true"></span>
                 <span class="text-2xl">MediaLens</span>
             </a>
-            <a href="{{ route('over') }}" class="text-sm text-white/80 underline decoration-white/30 underline-offset-4 hover:text-white">Over MediaLens</a>
+            <nav aria-label="Hoofdnavigatie" class="flex items-center gap-4 text-sm">
+                <a href="{{ route('artikelen.index') }}" class="text-white/80 underline decoration-white/30 underline-offset-4 hover:text-white">Artikelen</a>
+                <a href="{{ route('over') }}" class="text-white/80 underline decoration-white/30 underline-offset-4 hover:text-white">Over MediaLens</a>
+            </nav>
         </div>
     </header>
 

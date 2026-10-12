@@ -12,23 +12,31 @@
         <p class="text-sm text-muted"><span class="font-semibold text-ink">{{ $gebeurtenissen->total() }}</span> verhalen</p>
     </section>
 
-    <nav aria-label="Filter gebeurtenissen" class="mb-6 flex flex-wrap gap-2">
-        <a href="{{ route('gebeurtenissen.index') }}" @class([
-            'rounded-md px-4 py-2 text-sm font-medium transition',
-            'bg-ink text-white' => $filter === null,
-            'bg-white text-muted ring-1 ring-line hover:text-ink' => $filter !== null,
-        ]) aria-current="{{ $filter === null ? 'page' : 'false' }}">Alle</a>
-        <a href="{{ route('gebeurtenissen.index', ['filter' => 'met']) }}" @class([
-            'rounded-md px-4 py-2 text-sm font-medium transition',
-            'bg-ink text-white' => $filter === 'met',
-            'bg-white text-muted ring-1 ring-line hover:text-ink' => $filter !== 'met',
-        ]) aria-current="{{ $filter === 'met' ? 'page' : 'false' }}">Met samenvatting</a>
-        <a href="{{ route('gebeurtenissen.index', ['filter' => 'zonder']) }}" @class([
-            'rounded-md px-4 py-2 text-sm font-medium transition',
-            'bg-ink text-white' => $filter === 'zonder',
-            'bg-white text-muted ring-1 ring-line hover:text-ink' => $filter !== 'zonder',
-        ]) aria-current="{{ $filter === 'zonder' ? 'page' : 'false' }}">Zonder samenvatting</a>
-    </nav>
+    <form method="GET" action="{{ route('gebeurtenissen.index') }}" class="mb-6 grid gap-3 rounded-lg border border-line bg-white p-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(10rem,0.65fr)_minmax(10rem,0.65fr)_auto_auto]">
+        <div>
+            <label for="gebeurtenis-zoekterm" class="mb-1 block text-xs font-semibold text-muted">Zoek onderwerp of artikel</label>
+            <input id="gebeurtenis-zoekterm" name="q" type="search" value="{{ $zoekterm }}" class="w-full rounded-md border border-line bg-paper px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30">
+        </div>
+        <div>
+            <label for="samenvatting-filter" class="mb-1 block text-xs font-semibold text-muted">Samenvatting</label>
+            <select id="samenvatting-filter" name="filter" class="w-full rounded-md border border-line bg-paper px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30">
+                <option value="alle" @selected($filter === 'alle')>Alle</option>
+                <option value="met" @selected($filter === 'met')>Met samenvatting</option>
+                <option value="zonder" @selected($filter === 'zonder')>Zonder samenvatting</option>
+            </select>
+        </div>
+        <div>
+            <label for="perspectief-filter" class="mb-1 block text-xs font-semibold text-muted">Perspectief</label>
+            <select id="perspectief-filter" name="perspectief" class="w-full rounded-md border border-line bg-paper px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30">
+                <option value="alle" @selected($perspectief === 'alle')>Alle perspectieven</option>
+                <option value="links" @selected($perspectief === 'links')>Links</option>
+                <option value="midden" @selected($perspectief === 'midden')>Midden</option>
+                <option value="rechts" @selected($perspectief === 'rechts')>Rechts</option>
+            </select>
+        </div>
+        <button type="submit" class="self-end rounded-md bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-ink/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">Toepassen</button>
+        <a href="{{ route('gebeurtenissen.index') }}" class="self-end px-2 py-2 text-center text-sm text-muted underline decoration-line underline-offset-4 hover:text-ink">Wissen</a>
+    </form>
 
     <div class="space-y-4">
         @forelse ($gebeurtenissen as $gebeurtenis)
