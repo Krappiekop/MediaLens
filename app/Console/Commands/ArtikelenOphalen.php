@@ -73,8 +73,16 @@ class ArtikelenOphalen extends Command
                 $tekst = preg_replace('/\s+/', ' ', $tekst);
                 // "Continue reading..." verwijderen
                 $tekst = preg_replace('/Continue reading\.?\.?\.?\s*$/i', '', $tekst);
-                // "The post ... appeared first on ..." verwijderen
-                $tekst = preg_replace('/\s*The post .+? appeared first on .+$/i', '', $tekst);
+                // "The post ... appeared first on ..." en "The post ... first appeared on ..." verwijderen (o.a. Mediaite)
+                $tekst = preg_replace('/\s*The post .+? (?:appeared first|first appeared) on .+$/i', '', $tekst);
+                // "Like Blaze News? ... Sign up here!" verwijderen (TheBlaze)
+                $tekst = preg_replace('/\s*Like Blaze News\?.*$/i', '', $tekst);
+                // "Our Standards: The GB News Editorial Charter" verwijderen (GB News)
+                $tekst = preg_replace('/\s*Our Standards: The GB News Editorial Charter\s*$/i', '', $tekst);
+                // "Read More: https://..." verwijderen (Punch)
+                $tekst = preg_replace('/\s*Read More:\s*https?:\/\/\S+\s*$/i', '', $tekst);
+                // "[…]" of "[...]" aan het einde van WordPress-samenvattingen vervangen door "…"
+                $tekst = preg_replace('/\s*\[(?:…|\.\.\.)\]\s*$/u', '…', $tekst);
                 // spaties aan het begin en einde verwijderen
                 $tekst = trim($tekst);
 
