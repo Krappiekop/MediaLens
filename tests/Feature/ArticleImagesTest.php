@@ -91,14 +91,39 @@ class ArticleImagesTest extends TestCase
         $this->get('/')
             ->assertOk()
             ->assertSee('Nieuwe plannen voor de stad')
-            ->assertSee('https://images.example.test/stadsplan.jpg', false);
+            ->assertSee('w-fit max-w-full', false)
+            ->assertSee('https://images.example.test/stadsplan.jpg', false)
+            ->assertSee('Beeld: Fotograaf Voorbeeld');
 
         $this->get(route('gebeurtenissen.show', $gebeurtenis))
             ->assertOk()
-            ->assertSee('Fotograaf Voorbeeld')
-            ->assertSee('Beeld: Fotograaf Voorbeeld')
-            ->assertSee('Geen afbeelding beschikbaar')
+            ->assertSee('src="https://news.example.test/favicon.ico"', false)
+            ->assertDontSee('https://images.example.test/stadsplan.jpg', false)
+            ->assertDontSee('Bekijk onbekende bronnen')
             ->assertSee('loading="lazy"', false)
-            ->assertSee('alt="Bron toont de plannen in beeld"', false);
+            ->assertSee('alt="" aria-hidden="true"', false);
+    }
+
+    public function test_unknown_sources_are_hidden_in_a_collapsible_section(): void
+    {
+        $unknownBron = Bron::create(['naam' => 'Onbekende bron', 'orientatie' => 'unclassified']);
+        $gebeurtenis = Gebeurtenis::create(['onderwerp' => 'Gebeurtenis met onbekende bron']);
+
+        Artikel::create([
+            'titel' => 'Bericht van een onbekende bron',
+            'publicatiedatum' => '2026-10-12',
+            'volledige_tekst' => 'Een korte tekst.',
+            'url' => 'https://unknown.example.test/bericht',
+            'bron_id' => $unknownBron->id,
+            'gebeurtenis_id' => $gebeurtenis->id,
+        ]);
+
+        $this->get(route('gebeurtenissen.show', $gebeurtenis))
+            ->assertOk()
+            ->assertSee('<details', false)
+            ->assertSee('<summary', false)
+            ->assertSee('Bekijk onbekende bronnen (1)')
+            ->assertSee('Bericht van een onbekende bron')
+            ->assertSee('Onbekende bron');
     }
 }

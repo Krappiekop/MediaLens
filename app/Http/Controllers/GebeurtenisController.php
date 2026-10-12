@@ -32,7 +32,7 @@ class GebeurtenisController extends Controller
             ])
             ->withMax('artikelen', 'publicatiedatum')
             ->with(['artikelen' => function ($query) {
-                $query->select(['id', 'gebeurtenis_id', 'titel', 'afbeelding_url'])
+                $query->select(['id', 'gebeurtenis_id', 'titel', 'afbeelding_url', 'afbeelding_credit'])
                     ->whereNotNull('afbeelding_url')
                     ->orderByDesc('publicatiedatum')
                     ->orderByDesc('id')
@@ -68,6 +68,9 @@ class GebeurtenisController extends Controller
         ];
 
         $artikelen = $gebeurtenis->artikelen ?? collect();
+        $artikelen->each(function ($artikel): void {
+            $artikel->setAttribute('bron_logo_url', $this->bronLogoUrl($artikel->url));
+        });
 
         $artikelenPerOrientatie = $artikelen->groupBy(function ($artikel) use ($bakjes) {
             $orientatie = $artikel?->bron?->orientatie;
@@ -76,8 +79,10 @@ class GebeurtenisController extends Controller
                 return 'Onbekend';
             }
 
-            return $bakjes[$orientatie] ?? $orientatie;
+            return $bakjes[$orientatie] ?? 'Onbekend';
         });
+
+        $onbekendeArtikelen = $artikelenPerOrientatie->get('Onbekend', collect());
 
         foreach (['Links', 'Midden', 'Rechts', 'Onbekend'] as $naam) {
             $artikelenPerOrientatie->put(
@@ -99,6 +104,24 @@ class GebeurtenisController extends Controller
         return view('gebeurtenissen.show', [
             'gebeurtenis' => $gebeurtenis,
             'artikelenPerOrientatie' => $artikelenPerOrientatie,
+            'onbekendeArtikelen' => $onbekendeArtikelen,
         ]);
+    }
+
+    private function bronLogoUrl(string $artikelUrl): ?string
+    {
+        if (filter_var($artikelUrl, FILTER_VALIDATE_URL) === false) {
+            return null;
+        }
+
+        $scheme = parse_url($artikelUrl, PHP_URL_SCHEME);
+        $host = parse_url($artikelUrl, PHP_URL_HOST);
+        $port = parse_url($artikelUrl, PHP_URL_PORT);
+
+        if (! is_string($scheme) || ! is_string($host) || ! in_array(strtolower($scheme), ['http', 'https'], true)) {
+            return null;
+        }
+
+        return strtolower($scheme).'://'.$host.($port !== null ? ':'.$port : '').'/favicon.ico';
     }
 }

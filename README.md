@@ -297,13 +297,15 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 ### Bouwblok 14: Visuele vormgeving en artikelafbeeldingen
 - [x] Homepage vormgeven als een overzichtelijke nieuwsfeed, geïnspireerd op de scanbare opmaak van Ground News; eigen MediaLens-stijl behouden en geen ontwerp of merkonderdelen letterlijk kopiëren
 - [x] Gebeurtenissen als duidelijke kaarten tonen met onderwerp, publicatiedatum, aantal artikelen en verdeling Links / Midden / Rechts
-- [x] Bij artikelen een afbeelding tonen wanneer de RSS-feed die aanlevert via `media:content`, `media:thumbnail` of een afbeeldings-`enclosure`; audio-enclosures worden overgeslagen
-- [x] Afbeeldings-URL bij het artikel opslaan en tonen met titel als alt-tekst, vaste beeldverhouding en lazy loading
-- [x] Afbeeldingscredit uit de RSS-feed tonen waar beschikbaar; bij ontbrekende of onbruikbare afbeeldingen een nette fallback tonen
-- [ ] Voor feeds controleren of hergebruik van de aangeleverde afbeeldingen is toegestaan
-- [x] Detailpagina visueel laten aansluiten op de feed, met herkenbare bron- en oriëntatielabels en ruimte voor de samenvatting
+- [x] Afbeelding uit `media:content`, `media:thumbnail` of een afbeeldings-`enclosure` op de gebeurteniskaart tonen; audio-enclosures overslaan
+- [x] Afbeeldings-URL en optionele credit opslaan; de kaart toont de afbeelding in een vaste verhouding met titel als alt-tekst, lazy loading en credit waar beschikbaar
+- [x] Detailpagina visueel laten aansluiten op de feed met kleine bronfavicons (initialen als fallback), herkenbare oriëntatielabels en ruimte voor de samenvatting; geen artikelafbeeldingen op deze pagina
+- [x] Onbekende of ontbrekende oriëntaties alleen tonen in een inklapbaar blok als zulke artikelen bestaan
+- [x] Verdelingsbalk op het overzicht beperken tot de breedte van de Links/Midden/Rechts-labels
 - [ ] Layout testen op mobiel en desktop, inclusief artikelen zonder afbeelding, lange koppen en lege perspectiefkolommen
 - [ ] Controleren op toegankelijkheid en stabiele layout: voldoende contrast, toetsenbordbediening, alt-tekst en geen verspringende inhoud bij het laden van afbeeldingen
+- [ ] pagina waar je alle artikelen kan zien (vooral die zonder gebeurtenis) (hier mogen wel de afbeeldingen bij staan per artikel als die dat hebben)
+- [ ] zoeken en filteren toevoegen (aan gebeurtenissen en artikelen pagina)
 
 ### Later / optioneel
 - [ ] Scheduler: `artikelen:ophalen` + `samenvattingen:genereren` via Laravel `Schedule`
