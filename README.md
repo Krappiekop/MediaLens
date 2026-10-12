@@ -91,7 +91,7 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - Matching gebeurt op `volledige_tekst`, niet op de titel. Koppen over dezelfde gebeurtenis verschillen te sterk per bron. Dat wijkt af van de oorspronkelijke casusformulering (trefwoorden in de titel).
 - Alleen de eerste 40 woorden van die omschrijving tellen mee (`vergelijkTekst()`). De volle tekst blijft in de database voor de AI. Zonder die knip deelde een Guardian-digest van honderden woorden makkelijk journalistiek-Engels met SCMP of NDTV. Die knip blijft, ook na RAKE.
 - Trefwoorden komen uit RAKE (`donatello-za/rake-php-plus`), niet uit een eigen stopwoordenlijst. `trefwoorden()` vraagt `keywords()` (losse woorden) met taal `en_US`, omdat de feeds Engels zijn. `get()` geeft zinsdelen (`supreme court allowed`); die matchen niet met `array_intersect` op `supreme court`. RAKE gebruikt stopwoorden als snijpunten. `en_US` is veel groter dan de oude array van 22 woorden, dus de overlap daalt (`third` viel in Tinker af).
-- Overlapdrempel is 6 trefwoorden (`$minimaleOverlap` in `GebeurtenisMatcher`). Tijdvenster `$maxDagen = 1`: ±1 kalenderdag (`whereBetween`), dus drie datums rond de publicatiedatum. Met de eigen lijst stond de drempel op 7 en het venster op 3. Na RAKE koppelde 7 te weinig, 5 te los; 6 is de huidige knop. Of de groepen hetzelfde feit zijn, is een steekproef in phpMyAdmin of de browser, geen gegeven.
+- Overlapdrempel is 6 trefwoorden (`$minimaleOverlap` in `GebeurtenisMatcher`). Het match-venster is nu strikter: alleen artikelen met dezelfde kalenderdatum mogen worden gekoppeld (`whereDate('publicatiedatum', $zelfdeDatum)`). Met de eigen lijst stond de drempel op 7 en het venster op 3. Na RAKE koppelde 7 te weinig, 5 te los; 6 is de huidige knop. De wissel naar “zelfde datum” voorkomt cross-day matchen bij een nieuwe gebeurtenis op de volgende dag. Of de groepen hetzelfde feit zijn, is nog steeds een steekproef in phpMyAdmin of de browser, geen gegeven.
 - `RakePlus::create()` laadt `en_US` bij elke aanroep. Zonder hergebruik wordt `artikelen:ophalen` traag. De matcher houdt één `$rake`: eerste tekst `create()`, daarna `extract()`. Het command maakt die matcher één keer vóór de loop.
 - `extract()` op dezelfde tekst blijft duur als `koppel()` elke kandidaat opnieuw door RAKE haalt. `$trefwoordCache` slaat de trefwoorden per artikel-id op (`trefwoordenVan()`). Het nieuwe artikel gaat één keer door RAKE, elke kandidaat hoogstens één keer in de hele command. `overlap()` en `zelfdeGebeurtenis()` gaan om de cache heen (Tinker met losse strings).
 - Trefwoordmatching blijft simpel: de eerste kandidaat die de drempel haalt wint. Ketting-matching kan nog. Voorbeeld van vóór de knip van 40 woorden: Trump/Iran-stukken plus Guardian First Thing plus SCMP-Hongkong in één groep. Voorbeeld daarna: Guardian-AU-stukken via de gedeelde promo in de eerste 40 woorden (8 trefwoorden, toen drempel 7). Die promo's (`Get our …` en `Listen to the podcast …`) gaan er bij het ophalen af als HTML-`<li>` vóór tag-strip; bestaande `volledige_tekst` blijft vies tot je die rijen bijwerkt en opnieuw koppelt.
@@ -177,7 +177,7 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - [x] Matching op overlap in de eerste 40 woorden van `volledige_tekst` (RSS-omschrijving), niet de titel
 - [x] HTML uit de tekst strippen voor de trefwoorden
 - [x] Gebeurtenis krijgt als `onderwerp` de titel van het eerste artikel
-- [x] Groepering binnen `$maxDagen = 1` (±1 kalenderdag)
+- [x] Groepering alleen binnen dezelfde kalenderdatum (`whereDate('publicatiedatum', $zelfdeDatum)`) — geen match meer op de volgende dag
 - [x] Drempel: minstens 6 gedeelde trefwoorden (`$minimaleOverlap`). Was 7 bij de eigen stopwoordenlijst; na RAKE 5, daarna 6
 - [x] Eén `RakePlus`-instance hergebruiken (`extract()`), anders laadt elke vergelijking `en_US` opnieuw
 - [x] Trefwoorden per artikel-id cachen (`trefwoordenVan()`), anders draait RAKE opnieuw per kandidaat
@@ -270,8 +270,8 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 
 ### Bouwblok 12: Groeperen en onderwerp verbeteren
 - [ ] `onderwerp` afleiden van gedeelde trefwoorden of de “meest centrale” titel, niet blind het eerste artikel
-- [x] RAKE (`donatello-za/rake-php-plus`) als vervanging van de eigen stopwoordenlijst: `keywords()`, `en_US`, drempel 6, venster 1 dag
-- [ ] Matcher: documenteer in code waarom 40 woorden, drempel 6 en `$maxDagen = 1`
+- [x] RAKE (`donatello-za/rake-php-plus`) als vervanging van de eigen stopwoordenlijst: `keywords()`, `en_US`, drempel 6, alleen artikelen van dezelfde datum
+- [ ] Matcher: documenteer in code waarom 40 woorden, drempel 6 en de strikte same-day-regel (`$maxDagen = 0`)
 - [x] Handmatig herkoppelen blijft: samenvattingen weg, `gebeurtenis_id` leegmaken, opnieuw `koppel()`, of `migrate:fresh --seed` plus `artikelen:ophalen`
 - [ ] Getest op een bekende ketting-fout (digest vs echt nieuws) en op een goede groep (meerdere bronnen, zelfde feit)
 - [ ] Afwijking van de casus blijft: matching op omschrijving, niet op titel
@@ -293,6 +293,17 @@ Let op: Bij een nieuwe feed altijd de `volledige_tekst` van een paar items opene
 - [x] Verificatie uitgevoerd met `php artisan test --filter=ExampleTest`; de suite draait groen
 - [x] AI-feedback verwerkt als echte hardening pass in plaats van alleen “blind” codewijzigingen
 - [ ] Latere pass gebruiken voor review van matcher-, controller- en summary-kwaliteit met AI-gestuurde feedbackloops
+
+### Bouwblok 14: Visuele vormgeving en artikelafbeeldingen
+- [x] Homepage vormgeven als een overzichtelijke nieuwsfeed, geïnspireerd op de scanbare opmaak van Ground News; eigen MediaLens-stijl behouden en geen ontwerp of merkonderdelen letterlijk kopiëren
+- [x] Gebeurtenissen als duidelijke kaarten tonen met onderwerp, publicatiedatum, aantal artikelen en verdeling Links / Midden / Rechts
+- [x] Bij artikelen een afbeelding tonen wanneer de RSS-feed die aanlevert via `media:content`, `media:thumbnail` of een afbeeldings-`enclosure`; audio-enclosures worden overgeslagen
+- [x] Afbeeldings-URL bij het artikel opslaan en tonen met titel als alt-tekst, vaste beeldverhouding en lazy loading
+- [x] Afbeeldingscredit uit de RSS-feed tonen waar beschikbaar; bij ontbrekende of onbruikbare afbeeldingen een nette fallback tonen
+- [ ] Voor feeds controleren of hergebruik van de aangeleverde afbeeldingen is toegestaan
+- [x] Detailpagina visueel laten aansluiten op de feed, met herkenbare bron- en oriëntatielabels en ruimte voor de samenvatting
+- [ ] Layout testen op mobiel en desktop, inclusief artikelen zonder afbeelding, lange koppen en lege perspectiefkolommen
+- [ ] Controleren op toegankelijkheid en stabiele layout: voldoende contrast, toetsenbordbediening, alt-tekst en geen verspringende inhoud bij het laden van afbeeldingen
 
 ### Later / optioneel
 - [ ] Scheduler: `artikelen:ophalen` + `samenvattingen:genereren` via Laravel `Schedule`

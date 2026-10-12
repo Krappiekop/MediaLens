@@ -4,6 +4,14 @@
 @source '../../storage/framework/views/*.php';
 
 @theme {
+    --color-paper: #f2f5f3;
+    --color-ink: #192629;
+    --color-muted: #5b6a6c;
+    --color-line: #d9e1de;
+    --color-left: #3f7888;
+    --color-neutral-spectrum: #9ba7a5;
+    --color-right: #c6523b;
+    --color-accent: #e36b4d;
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }

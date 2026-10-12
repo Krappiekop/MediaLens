@@ -28,7 +28,7 @@ class GebeurtenisMatcher
     }
 
     private int $minimaleOverlap = 6;   // <--- minimale hoeveelheid trefwoorden die in beide teksten moeten voorkomen om een match te hebben
-    private int $maxDagen = 1;
+    private int $maxDagen = 0; // <--- alleen artikelen van dezelfde datum mogen aan dezelfde gebeurtenis worden gekoppeld
     private ?RakePlus $rake = null;
     private array $trefwoordCache = [];
 
@@ -39,12 +39,11 @@ class GebeurtenisMatcher
             return 'overgeslagen';
         }
 
-        $vanaf = Carbon::parse($artikel->publicatiedatum)->subDays($this->maxDagen)->toDateString();
-        $tot = Carbon::parse($artikel->publicatiedatum)->addDays($this->maxDagen)->toDateString();
+        $zelfdeDatum = Carbon::parse($artikel->publicatiedatum)->toDateString();
 
         $kandidaten = Artikel::where('id', '!=', $artikel->id)          // <--- artikel is niet zelf de kandidaat
             ->whereNotNull('gebeurtenis_id')                            // <--- artikel is gekoppeld aan een gebeurtenis
-            ->whereBetween('publicatiedatum', [$vanaf, $tot])           // <--- artikel publicatiedatum tussen $vanaf en $tot (max 3 dagen verschil)
+            ->whereDate('publicatiedatum', $zelfdeDatum)                // <--- alleen artikelen van dezelfde dag mogen worden gekoppeld
             ->get();
 
         $woordenNieuw = $this->trefwoordenVan($artikel);

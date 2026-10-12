@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Gebeurtenis;
+use Illuminate\Http\Request;
 
 class GebeurtenisController extends Controller
 {
@@ -31,6 +31,13 @@ class GebeurtenisController extends Controller
                 },
             ])
             ->withMax('artikelen', 'publicatiedatum')
+            ->with(['artikelen' => function ($query) {
+                $query->select(['id', 'gebeurtenis_id', 'titel', 'afbeelding_url'])
+                    ->whereNotNull('afbeelding_url')
+                    ->orderByDesc('publicatiedatum')
+                    ->orderByDesc('id')
+                    ->limit(1);
+            }])
             ->orderByDesc('artikelen_max_publicatiedatum')
             ->orderByDesc('id');
 
@@ -44,6 +51,7 @@ class GebeurtenisController extends Controller
 
         return view('gebeurtenissen.index', [
             'gebeurtenissen' => $gebeurtenissen,
+            'filter' => $filter,
         ]);
     }
 

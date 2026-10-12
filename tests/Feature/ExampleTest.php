@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Artikel;
 use App\Models\Bron;
 use App\Models\Gebeurtenis;
+use App\Services\GebeurtenisMatcher;
 use App\Services\LiteLlm;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -191,5 +192,41 @@ class ExampleTest extends TestCase
         $this->expectExceptionMessage('Ongeldige JSON van het model');
 
         (new \App\Services\ArtikelVergelijker())->slaOp($gebeurtenis);
+    }
+
+    public function test_articles_are_only_matched_within_the_same_day(): void
+    {
+        $bron = Bron::create([
+            'naam' => 'Bron voor dagvergrendeling',
+            'orientatie' => 'left-center',
+        ]);
+
+        $gebeurtenis = Gebeurtenis::create([
+            'onderwerp' => 'Eerste gebeurtenis',
+        ]);
+
+        $eersteArtikel = Artikel::create([
+            'titel' => 'Beleid op begroting en verkiezingen',
+            'publicatiedatum' => '2026-10-10',
+            'volledige_tekst' => 'Regering noemt begroting een akkoord en verkiezingen volgen na overleg over de vakbonden.',
+            'url' => 'https://example.com/volgende-dag-1',
+            'bron_id' => $bron->id,
+            'gebeurtenis_id' => $gebeurtenis->id,
+        ]);
+
+        $nieuwArtikel = Artikel::create([
+            'titel' => 'Nieuwe groep over begroting en verkiezingen',
+            'publicatiedatum' => '2026-10-11',
+            'volledige_tekst' => 'Regering noemt begroting een akkoord en verkiezingen volgen na overleg over de vakbonden.',
+            'url' => 'https://example.com/volgende-dag-2',
+            'bron_id' => $bron->id,
+            'gebeurtenis_id' => null,
+        ]);
+
+        $resultaat = (new GebeurtenisMatcher())->koppel($nieuwArtikel);
+
+        $this->assertSame('nieuw', $resultaat);
+        $this->assertNotNull($nieuwArtikel->fresh()->gebeurtenis_id);
+        $this->assertNotSame($gebeurtenis->id, $nieuwArtikel->fresh()->gebeurtenis_id);
     }
 }

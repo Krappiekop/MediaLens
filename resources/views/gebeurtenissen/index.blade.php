@@ -3,28 +3,70 @@
 @section('title', 'Gebeurtenissen')
 
 @section('content')
-    <h1 class="text-2xl font-semibold">Gebeurtenissen</h1>
-    <p class="mt-4 space-x-4 text-sm">
-        <a href="{{ route('gebeurtenissen.index') }}" class="text-blue-800 underline">Alle</a>
-        <a href="{{ route('gebeurtenissen.index', ['filter' => 'met']) }}" class="text-blue-800 underline">Met
-            samenvatting</a>
-        <a href="{{ route('gebeurtenissen.index', ['filter' => 'zonder']) }}" class="text-blue-800 underline">Zonder
-            samenvatting</a>
-    </p>
-    <ul class="mt-4 list-disc space-y-3 pl-5">
-        @foreach ($gebeurtenissen as $gebeurtenis)
-            <li>
-                <a href="{{ route('gebeurtenissen.show', $gebeurtenis) }}" class="text-blue-800 underline">
-                    {{ $gebeurtenis->onderwerp }}
-                </a>
+    <section class="mb-8 flex flex-col justify-between gap-5 border-b border-line pb-6 sm:flex-row sm:items-end">
+        <div>
+            <p class="mb-2 text-xs font-semibold uppercase tracking-wider text-accent">Nieuws, naast elkaar</p>
+            <h1 class="text-3xl font-semibold tracking-tight">Gebeurtenissen</h1>
+            <p class="mt-2 max-w-xl text-sm leading-relaxed text-muted">Bekijk hoe verschillende nieuwsbronnen dezelfde gebeurtenis behandelen.</p>
+        </div>
+        <p class="text-sm text-muted"><span class="font-semibold text-ink">{{ $gebeurtenissen->total() }}</span> verhalen</p>
+    </section>
 
-                <span class="block text-sm text-gray-600">
-                    Links {{ $gebeurtenis->links_count }},
-                    Midden {{ $gebeurtenis->midden_count }},
-                    Rechts {{ $gebeurtenis->rechts_count }}
-                </span>
-            </li>
-        @endforeach
-    </ul>
+    <nav aria-label="Filter gebeurtenissen" class="mb-6 flex flex-wrap gap-2">
+        <a href="{{ route('gebeurtenissen.index') }}" @class([
+            'rounded-md px-4 py-2 text-sm font-medium transition',
+            'bg-ink text-white' => $filter === null,
+            'bg-white text-muted ring-1 ring-line hover:text-ink' => $filter !== null,
+        ]) aria-current="{{ $filter === null ? 'page' : 'false' }}">Alle</a>
+        <a href="{{ route('gebeurtenissen.index', ['filter' => 'met']) }}" @class([
+            'rounded-md px-4 py-2 text-sm font-medium transition',
+            'bg-ink text-white' => $filter === 'met',
+            'bg-white text-muted ring-1 ring-line hover:text-ink' => $filter !== 'met',
+        ]) aria-current="{{ $filter === 'met' ? 'page' : 'false' }}">Met samenvatting</a>
+        <a href="{{ route('gebeurtenissen.index', ['filter' => 'zonder']) }}" @class([
+            'rounded-md px-4 py-2 text-sm font-medium transition',
+            'bg-ink text-white' => $filter === 'zonder',
+            'bg-white text-muted ring-1 ring-line hover:text-ink' => $filter !== 'zonder',
+        ]) aria-current="{{ $filter === 'zonder' ? 'page' : 'false' }}">Zonder samenvatting</a>
+    </nav>
+
+    <div class="space-y-4">
+        @forelse ($gebeurtenissen as $gebeurtenis)
+            @php($totaal = max(1, $gebeurtenis->artikelen_count))
+            <a href="{{ route('gebeurtenissen.show', $gebeurtenis) }}" class="group block overflow-hidden rounded-lg border border-line bg-white shadow-sm transition hover:border-ink/30 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+                <article class="{{ $gebeurtenis->artikelen->isNotEmpty() ? 'md:grid md:grid-cols-[minmax(0,17rem)_minmax(0,1fr)]' : '' }}">
+                    @if ($gebeurtenis->artikelen->isNotEmpty())
+                        <div class="relative aspect-[16/9] overflow-hidden bg-paper md:aspect-auto md:min-h-full">
+                            <span class="absolute inset-0 flex items-center justify-center text-xs font-medium text-muted" aria-hidden="true">Foto niet beschikbaar</span>
+                            <img src="{{ $gebeurtenis->artikelen->first()->afbeelding_url }}" alt="{{ $gebeurtenis->artikelen->first()->titel }}" loading="lazy" class="absolute inset-0 h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]" onerror="this.remove()">
+                        </div>
+                    @endif
+                    <div class="p-5 md:p-6">
+                        <div class="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
+                            <time datetime="{{ $gebeurtenis->artikelen_max_publicatiedatum }}">{{ date('d-m-Y', strtotime($gebeurtenis->artikelen_max_publicatiedatum)) }}</time>
+                            <span aria-hidden="true">·</span>
+                            <span>{{ $gebeurtenis->artikelen_count }} artikelen</span>
+                        </div>
+                        <h2 class="text-xl font-semibold leading-snug group-hover:text-accent">{{ $gebeurtenis->onderwerp }}</h2>
+                        <div class="mt-5" role="img" aria-label="Verdeling van artikelen: {{ $gebeurtenis->links_count }} links, {{ $gebeurtenis->midden_count }} midden, {{ $gebeurtenis->rechts_count }} rechts">
+                            <div class="flex h-2 overflow-hidden rounded-full bg-paper">
+                                <span class="bg-left" style="width: {{ ($gebeurtenis->links_count / $totaal) * 100 }}%"></span>
+                                <span class="bg-neutral-spectrum" style="width: {{ ($gebeurtenis->midden_count / $totaal) * 100 }}%"></span>
+                                <span class="bg-right" style="width: {{ ($gebeurtenis->rechts_count / $totaal) * 100 }}%"></span>
+                            </div>
+                        </div>
+                        <div class="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs text-muted">
+                            <span class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-left"></span>Links {{ $gebeurtenis->links_count }}</span>
+                            <span class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-neutral-spectrum"></span>Midden {{ $gebeurtenis->midden_count }}</span>
+                            <span class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-right"></span>Rechts {{ $gebeurtenis->rechts_count }}</span>
+                        </div>
+                    </div>
+                </article>
+            </a>
+        @empty
+            <p class="rounded-lg border border-line bg-white px-5 py-8 text-center text-sm text-muted">Geen gebeurtenissen gevonden.</p>
+        @endforelse
+    </div>
+
     {{ $gebeurtenissen->links() }}
 @endsection
