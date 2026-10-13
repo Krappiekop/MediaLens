@@ -3,7 +3,11 @@
 @section('title', $gebeurtenis->onderwerp)
 
 @section('content')
-    <a href="{{ route('gebeurtenissen.index') }}" class="inline-flex items-center gap-2 text-sm font-medium text-muted underline decoration-line underline-offset-4 hover:text-ink">&larr; Terug naar het overzicht</a>
+    @if ($gebeurtenis->categorie)
+        <a href="{{ route('gebeurtenissen.categorie', $gebeurtenis->categorie) }}" class="inline-flex items-center gap-2 text-sm font-medium text-muted underline decoration-line underline-offset-4 hover:text-ink">&larr; Terug naar {{ $gebeurtenis->categorie->label() }}</a>
+    @else
+        <a href="{{ route('gebeurtenissen.index') }}" class="inline-flex items-center gap-2 text-sm font-medium text-muted underline decoration-line underline-offset-4 hover:text-ink">&larr; Terug naar het overzicht</a>
+    @endif
 
     <header class="mt-6 border-b border-line pb-6">
         <p class="mb-2 text-xs font-semibold uppercase tracking-wider text-accent">Berichtgeving vergelijken</p>

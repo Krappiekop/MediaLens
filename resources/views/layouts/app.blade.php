@@ -14,7 +14,7 @@
 <body class="flex min-h-screen flex-col bg-paper text-ink antialiased">
     <header class="border-b-4 border-accent bg-ink px-4 text-white">
         <div class="mx-auto flex w-full max-w-6xl items-center justify-between py-4">
-            <a href="{{ route('gebeurtenissen.index') }}" class="flex items-center gap-3 font-semibold">
+            <a href="{{ route('home') }}" class="flex items-center gap-3 font-semibold">
                 <span class="h-9 w-1.5 rounded-sm bg-accent" aria-hidden="true"></span>
                 <span class="text-2xl">MediaLens</span>
             </a>
@@ -24,6 +24,29 @@
             </nav>
         </div>
     </header>
+
+    @php
+        $huidigeCategorie = request()->route('categorie');
+        $huidigeCategorie = $huidigeCategorie instanceof \App\Categorie ? $huidigeCategorie->value : $huidigeCategorie;
+        $menu = [['label' => 'Home', 'url' => route('home'), 'actief' => request()->routeIs('home')]];
+        foreach (\App\Categorie::menu() as $menuCategorie) {
+            $menu[] = [
+                'label' => $menuCategorie->label(),
+                'url' => route('gebeurtenissen.categorie', $menuCategorie),
+                'actief' => request()->routeIs('gebeurtenissen.categorie') && $huidigeCategorie === $menuCategorie->value,
+            ];
+        }
+        $menu[] = ['label' => 'Alles', 'url' => route('gebeurtenissen.index'), 'actief' => request()->routeIs('gebeurtenissen.index')];
+    @endphp
+    <nav aria-label="Onderwerpen" class="border-b border-line bg-white px-4">
+        <ul class="mx-auto flex w-full max-w-6xl gap-1 overflow-x-auto text-sm font-medium">
+            @foreach ($menu as $item)
+                <li class="shrink-0">
+                    <a href="{{ $item['url'] }}" @if ($item['actief']) aria-current="page" @endif class="block border-b-2 px-3 py-3 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent {{ $item['actief'] ? 'border-accent text-ink' : 'border-transparent text-muted hover:border-line hover:text-ink' }}">{{ $item['label'] }}</a>
+                </li>
+            @endforeach
+        </ul>
+    </nav>
 
     <main class="mx-auto w-full max-w-6xl flex-1 px-4 py-8 md:px-6 md:py-10">
         @yield('content')

@@ -16,9 +16,9 @@ AI-ondersteund systeem dat nieuwsartikelen over dezelfde gebeurtenis uit meerder
 5. Database `medialens` aanmaken in phpMyAdmin
 6. `php artisan migrate:fresh --seed`
 7. `php artisan artikelen:ophalen` om artikelen binnen te halen en te groeperen. Per bron eerst `Ophalen bij …`, daarna één regel: hoeveel nieuwe artikelen, hoeveel daarvan een nieuwe gebeurtenis openden, en hoeveel aan een bestaande gebeurtenis gekoppeld zijn. Een URL die al in de database staat telt niet mee.
-8. `php artisan samenvattingen:genereren` voor alle gebeurtenissen, of `php artisan samenvattingen:genereren 5` voor één id
+8. `php artisan samenvattingen:genereren` voor alle gebeurtenissen, of `php artisan samenvattingen:genereren 5` voor één id. Dit zet ook de `categorie` van de gebeurtenis. Gebeurtenissen die al een samenvatting hebben, of er nog geen krijgen, deel je in met `php artisan gebeurtenissen:categoriseren` (of `gebeurtenissen:categoriseren 5` om één id opnieuw in te delen)
 9. Controleren in de Artisan-output en in phpMyAdmin (`artikelen`, `gebeurtenissen`, `samenvattingen`)
-10. `php artisan serve` en open `http://127.0.0.1:8000/` of `http://127.0.0.1:8000/gebeurtenissen`. De lijst toont 15 gebeurtenissen per pagina, nieuwste `artikelen.publicatiedatum` eerst. Filter Alle / Met samenvatting / Zonder samenvatting gaat via de querystring (`?filter=met` of `?filter=zonder`), zonder JavaScript. Een onderwerp opent `/gebeurtenissen/{id}`. Footer **Over** en de disclaimer onder de kolommen gaan naar `/over`. In een tweede terminal: `npm run dev`. Dat schrijft `public/hot` en levert de CSS. Zonder dat proces, en zonder `public/build/manifest.json` van `npm run build`, blijft de pagina HTML. De `@if` rond `@vite` in `resources/views/layouts/app.blade.php` voorkomt dan een `ViteManifestNotFoundException`. XAMPP Apache draait PHP 8.2 en start Laravel 13 niet. De CLI-PHP (8.4+) wel. phpMyAdmin via XAMPP blijft werken.
+10. `php artisan serve` en open `http://127.0.0.1:8000/` (homepage) of `http://127.0.0.1:8000/gebeurtenissen` (Alles). Onderwerpen staan op `/onderwerpen/{categorie}`, bijvoorbeeld `/onderwerpen/politiek`. De lijst toont 15 gebeurtenissen per pagina, nieuwste `artikelen.publicatiedatum` eerst. Filter Alle / Met samenvatting / Zonder samenvatting gaat via de querystring (`?filter=met` of `?filter=zonder`), zonder JavaScript. Een onderwerp opent `/gebeurtenissen/{id}`. Footer **Over** en de disclaimer onder de kolommen gaan naar `/over`. In een tweede terminal: `npm run dev`. Dat schrijft `public/hot` en levert de CSS. Zonder dat proces, en zonder `public/build/manifest.json` van `npm run build`, blijft de pagina HTML. De `@if` rond `@vite` in `resources/views/layouts/app.blade.php` voorkomt dan een `ViteManifestNotFoundException`. XAMPP Apache draait PHP 8.2 en start Laravel 13 niet. De CLI-PHP (8.4+) wel. phpMyAdmin via XAMPP blijft werken.
 
 Of feeds en samenvattingen kloppen, zie je bij stap 7 tot en met 9. Of de lijst en de detailpagina kloppen, bij stap 10 plus phpMyAdmin (`gebeurtenissen`, `artikelen`, `samenvattingen`, `bronnen`). Tweede pagina en filter “zonder samenvatting” toetsen tegen dezelfde `ORDER BY` / `HAVING` in phpMyAdmin. `/over` is vaste uitleg, geen databasecheck.
 
@@ -285,9 +285,24 @@ The Nation stond eerder op die onbruikbaar-lijst (layout-HTML plus “appeared f
 - Filter via querystring, geen JavaScript: geen `filter` is Alles, `?filter=met` is `has('samenvatting')`, `?filter=zonder` is `doesntHave('samenvatting')`. Onbekende waarden gedragen zich als Alles. Extra keys in `route('gebeurtenissen.index', ['filter' => 'zonder'])` worden querystring, omdat `filter` geen routeparameter is.
 - Per rij: onderwerp en de telling Links / Midden / Rechts. Wel of geen samenvatting staat niet meer per rij; dat is het filter. `withExists('samenvatting')` is daarom weg. `withCount('artikelen')` haalt `artikelen_count` nog op, de lijst toont dat totaal niet.
 - De drie tellingen zijn extra `withCount`s met `whereHas('bron')`. Zelfde indeling als de kolommen: `left` en `left-center` zijn Links, `neutral` is Midden, `right-center` en `right` zijn Rechts. Geen extra AI.
-- `/` en `/gebeurtenissen` wijzen naar dezelfde `index`. `/gebeurtenissen` heet `gebeurtenissen.index`. `/` heeft geen naam: een named route wijst naar één URL. Elk onderwerp linkt naar `/gebeurtenissen/{id}` via `gebeurtenissen.show`. Filterlinks gebruiken de named route, zodat ze op `/gebeurtenissen?filter=…` landen, niet op `/?filter=…`.
+- Sinds de homepage wijst `/` naar `HomeController@index` (named route `home`), niet meer naar de lijst. `/gebeurtenissen` heet `gebeurtenissen.index` en is **Alles** in het menu. Elk onderwerp linkt naar `/gebeurtenissen/{id}` via `gebeurtenissen.show`. Filterlinks gebruiken de named route, zodat ze op `/gebeurtenissen?filter=…` landen, niet op `/?filter=…`.
+
+### Onderwerpen en homepage
+- Elke gebeurtenis heeft een nullable kolom `gebeurtenissen.categorie`, met de waarden uit de enum `App\Categorie`: `wereld`, `politiek`, `economie`, `tech-wetenschap`, `sport`, `overig`. De omschrijving per categorie staat in `Categorie::beschrijving()` en gaat zo de prompt in.
+- De categorie komt van de AI, niet uit de feed. `samenvat()` vraagt hem in hetzelfde `json_schema` als de vier samenvattingsvelden (een `enum`). `slaOp()` zet hem op de gebeurtenis, niet in `samenvattingen`, en gooit een `RuntimeException` bij een onbekende waarde, zodat het command het opnieuw probeert.
+- `slaOp()` slaat een bestaande samenvatting zonder nieuwe artikelen over, dus oude gebeurtenissen krijgen zo geen categorie. Daarvoor is `gebeurtenissen:categoriseren`: een kleine aparte prompt (`categoriseer()`) voor gebeurtenissen met 2+ artikelen en `categorie` leeg, maximaal 3 pogingen per gebeurtenis. Met een id deelt hij die ene gebeurtenis altijd opnieuw in.
+- Een gebeurtenis zonder categorie staat alleen onder Alles (`/gebeurtenissen`), niet op een onderwerppagina of in de blokken per onderwerp op de homepage.
+- Menubalk: Home, Wereld, Politiek, Economie, Tech & Wetenschap, Sport, Alles (`Categorie::menu()`). `overig` staat niet in het menu maar wel onder Alles; `/onderwerpen/overig` werkt wel. Een onbekende waarde in de URL geeft 404 (enum route binding).
+- Er zijn geen sportfeeds. Sport blijft vrijwel leeg tot er sportbronnen in `BronSeeder` staan.
+- Onderwerppagina's gebruiken `GebeurtenisController@index` met dezelfde zoekterm, filters, sortering en paginering als Alles. Het formulier en **Wissen** blijven op het onderwerp.
+- Homepage (`HomeController`, view `home.blade.php`): **Hot** zijn de 5 gebeurtenissen met de meeste artikelen in de laatste 48 uur (minstens 2). `publicatiedatum` is een datum zonder tijd, dus "48 uur" is vandaag plus gisteren. Daaronder per onderwerp de 5 nieuwste gebeurtenissen (een onderwerp zonder gebeurtenissen valt weg) en een zijkolom **Meeste artikelen** over de hele database.
+- Hot hangt af van de datum van vandaag. Zonder recent `artikelen:ophalen` is dat blok leeg.
+- Een onderwerppagina toont bovenaan **Trending in {onderwerp}**: de 3 gebeurtenissen van dat onderwerp die het hoogst scoren op dezelfde Hot-regel, naast elkaar (`md:grid-cols-3`, op mobiel onder elkaar). Daaronder **Meer over {onderwerp}** met de gewone lijst. De trending gebeurtenissen gaan op elke pagina uit die lijst (`whereKeyNot`), zodat ze niet dubbel staan en pagina 2 niet verschuift. Het getal "verhalen" telt ze wel mee.
+- Trending verschijnt alleen op pagina 1 en alleen zonder zoekterm, samenvattingsfilter of perspectief. Met een filter staat alles weer gewoon in de lijst. Zonder gebeurtenissen in de laatste 48 uur valt het blok weg. Alles (`/gebeurtenissen`) heeft geen trending-blok.
+- De kaartquery (tellingen Links/Midden/Rechts, nieuwste datum, één afbeelding) staat als scopes op `Gebeurtenis`: `zichtbaar()`, `voorKaart()`, `nieuwsteEerst()`, en `hot()` voor de 48-uursregel. Lijst, onderwerppagina's en homepage delen die.
 
 ### Detailpagina
+- Bovenaan staat **Terug naar {onderwerp}** als de gebeurtenis een categorie heeft, anders **Terug naar het overzicht**.
 - Bakjes `Links`, `Midden` en `Rechts` zijn alleen weergave. `bronnen.orientatie` blijft de Media Bias Fact Check-label (`left`, `left-center`, `neutral`, `right-center`, `right`). Die ruwe waarde staat per artikel onder de titel, bij de bronnaam.
 - `groupBy` maakt alleen een bakje waar een artikel in zit. Daarna zet een `foreach` alsnog een lege Collection op Links, Midden en Rechts. `sortBy` forceert die volgorde. Een leeg bakje toont de kop plus "Geen artikelen in dit bakje." Een onbekende `orientatie` blijft een extra bakje en zakt via `?? 4` naar onderen.
 - De drie bakjes staan in een `grid`: één kolom onder 768px (`grid-cols-1`), drie kolommen daarboven (`md:grid-cols-3`).
@@ -439,8 +454,6 @@ The Nation stond eerder op die onbruikbaar-lijst (layout-HTML plus “appeared f
 - [x] RAKE (`donatello-za/rake-php-plus`) als vervanging van de eigen stopwoordenlijst: `keywords()`, `en_US`, drempel 6, alleen artikelen van dezelfde datum
 - [ ] Matcher: documenteer in code waarom 40 woorden, drempel 6 en de strikte same-day-regel (`$maxDagen = 0`)
 - [x] Handmatig herkoppelen blijft: samenvattingen weg, `gebeurtenis_id` leegmaken, opnieuw `koppel()`, of `migrate:fresh --seed` plus `artikelen:ophalen`
-- [ ] Getest op een bekende ketting-fout (digest vs echt nieuws) en op een goede groep (meerdere bronnen, zelfde feit)
-- [ ] Afwijking van de casus blijft: matching op omschrijving, niet op titel
 
 ### Bouwblok 13: Feedback krijgen en verwerken met AI
 - [x] AI gebruikt om de README, notities en projectstructuur te reviewen en de belangrijkste risico's te benoemen
@@ -468,10 +481,14 @@ The Nation stond eerder op die onbruikbaar-lijst (layout-HTML plus “appeared f
 - [x] Detailpagina visueel laten aansluiten op de feed met kleine bronfavicons (initialen als fallback), herkenbare oriëntatielabels en ruimte voor de samenvatting; geen artikelafbeeldingen op deze pagina
 - [x] Onbekende of ontbrekende oriëntaties alleen tonen in een inklapbaar blok als zulke artikelen bestaan
 - [x] Verdelingsbalk op het overzicht beperken tot de breedte van de Links/Midden/Rechts-labels
-- [ ] Layout testen op mobiel en desktop, inclusief artikelen zonder afbeelding, lange koppen en lege perspectiefkolommen
-- [ ] Controleren op toegankelijkheid en stabiele layout: voldoende contrast, toetsenbordbediening, alt-tekst en geen verspringende inhoud bij het laden van afbeeldingen
+- [x] Layout testen op mobiel en desktop, inclusief artikelen zonder afbeelding, lange koppen en lege perspectiefkolommen
+- [x] Controleren op toegankelijkheid en stabiele layout: voldoende contrast, toetsenbordbediening, alt-tekst en geen verspringende inhoud bij het laden van afbeeldingen
 - [x] Pagina `/artikelen` met alle artikelen, inclusief artikelen zonder gebeurtenis; afbeeldingen en credits worden getoond waar beschikbaar
 - [x] Zoeken en filteren op gebeurtenissen en artikelen: zoekterm, samenvattingsstatus en perspectief; op artikelen ook wel/geen gebeurtenis
+- [x] Menubalk met onderwerpen: Home, Wereld, Politiek, Economie, Tech & Wetenschap, Sport, Alles. De AI kiest de categorie bij `samenvattingen:genereren`; `gebeurtenissen:categoriseren` deelt bestaande gebeurtenissen in
+- [x] Homepage `/` als overzicht: Hot (meeste artikelen in de laatste 48 uur), per onderwerp de 5 nieuwste gebeurtenissen, en de 5 gebeurtenissen met de meeste artikelen
+- [x] Sportfeeds toevoegen, anders blijft het onderwerp Sport leeg
+- [x] Onderwerppagina's tonen eerst 3 trending gebeurtenissen naast elkaar (meeste artikelen in de laatste 48 uur, zelfde regel als Hot), daarna de rest van de lijst zonder die 3
 
 ### Bouwblok 15: Bronnen uitbreiden
 - [x] 212 kandidaat-feeds getest met dezelfde ophaal- en filterlogica als `artikelen:ophalen`: genoeg items, leesbare tekst na filtering, geldige `pubDate`, recent

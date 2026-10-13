@@ -2,13 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Categorie;
 use App\Models\Gebeurtenis;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
 class GebeurtenisController extends Controller
 {
-    public function index(Request $request)
+    private int $aantalTrending = 3;
+
+    /**
+     * Lijst met alle gebeurtenissen, of alleen die van één onderwerp via /onderwerpen/{categorie}.
+     */
+    public function index(Request $request, ?Categorie $categorie = null)
     {
         $zoekterm = $request->query('q');
         $zoekterm = is_string($zoekterm) ? trim($zoekterm) : '';
@@ -17,35 +23,27 @@ class GebeurtenisController extends Controller
         $perspectief = $request->query('perspectief');
         $perspectief = in_array($perspectief, ['links', 'midden', 'rechts'], true) ? $perspectief : 'alle';
 
-        $query = Gebeurtenis::has('artikelen', '>=', 2)
-            ->withCount([
-                'artikelen',
-                'artikelen as links_count' => function ($query) {
-                    $query->whereHas('bron', function ($bron) {
-                        $bron->whereIn('orientatie', ['left', 'left-center']);
-                    });
-                },
-                'artikelen as midden_count' => function ($query) {
-                    $query->whereHas('bron', function ($bron) {
-                        $bron->where('orientatie', 'neutral');
-                    });
-                },
-                'artikelen as rechts_count' => function ($query) {
-                    $query->whereHas('bron', function ($bron) {
-                        $bron->whereIn('orientatie', ['right-center', 'right']);
-                    });
-                },
-            ])
-            ->withMax('artikelen', 'publicatiedatum')
-            ->with(['artikelen' => function ($query) {
-                $query->select(['id', 'gebeurtenis_id', 'titel', 'afbeelding_url', 'afbeelding_credit'])
-                    ->whereNotNull('afbeelding_url')
-                    ->orderByDesc('publicatiedatum')
-                    ->orderByDesc('id')
-                    ->limit(1);
-            }])
-            ->orderByDesc('artikelen_max_publicatiedatum')
-            ->orderByDesc('id');
+        $query = Gebeurtenis::zichtbaar()
+            ->voorKaart()
+            ->nieuwsteEerst();
+
+        if ($categorie !== null) {
+            $query->where('categorie', $categorie);
+        }
+
+        // Trending alleen op een onderwerppagina zonder zoekterm of filters. Die gebeurtenissen gaan
+        // op elke pagina uit de lijst, zodat ze niet dubbel staan en de paginering niet verschuift.
+        $trending = collect();
+
+        if ($categorie !== null && $zoekterm === '' && $filter === 'alle' && $perspectief === 'alle') {
+            $trending = Gebeurtenis::voorKaart()
+                ->hot()
+                ->where('categorie', $categorie)
+                ->limit($this->aantalTrending)
+                ->get();
+
+            $query->whereKeyNot($trending->modelKeys());
+        }
 
         if ($zoekterm !== '') {
             $query->where(function (Builder $query) use ($zoekterm): void {
@@ -81,9 +79,15 @@ class GebeurtenisController extends Controller
 
         return view('gebeurtenissen.index', [
             'gebeurtenissen' => $gebeurtenissen,
+            'trending' => $gebeurtenissen->onFirstPage() ? $trending : collect(),
+            'aantalVerhalen' => $gebeurtenissen->total() + $trending->count(),
             'zoekterm' => $zoekterm,
             'filter' => $filter,
             'perspectief' => $perspectief,
+            'categorie' => $categorie,
+            'lijstUrl' => $categorie !== null
+                ? route('gebeurtenissen.categorie', $categorie)
+                : route('gebeurtenissen.index'),
         ]);
     }
 
