@@ -33,7 +33,7 @@ class BronSeeder extends Seeder
             ['naam' => 'The Hill', 'orientatie' => 'neutral', 'betrouwbaarheid' => 'mixed', 'feed_url' => 'https://thehill.com/news/feed/'],
             ['naam' => 'Roll Call', 'orientatie' => 'neutral', 'betrouwbaarheid' => 'high', 'feed_url' => 'https://rollcall.com/feed/'],
             ['naam' => 'Semafor', 'orientatie' => 'neutral', 'betrouwbaarheid' => 'high', 'feed_url' => 'https://www.semafor.com/rss.xml'],
-            ['naam' => 'The Free Press', 'orientatie' => 'right-center', 'betrouwbaarheid' => null, 'feed_url' => 'https://www.thefp.com/feed'],
+            ['naam' => 'The Free Press', 'orientatie' => 'right-center', 'betrouwbaarheid' => 'mixed', 'feed_url' => 'https://www.thefp.com/feed'],
             ['naam' => 'The Daily Signal', 'orientatie' => 'right', 'betrouwbaarheid' => 'mixed', 'feed_url' => 'https://www.dailysignal.com/feed/'],
             ['naam' => 'Washington Examiner', 'orientatie' => 'right', 'betrouwbaarheid' => 'mixed', 'feed_url' => 'https://www.washingtonexaminer.com/feed/'],
             ['naam' => 'Washington Examiner: Policy', 'orientatie' => 'right', 'betrouwbaarheid' => 'mixed', 'feed_url' => 'https://www.washingtonexaminer.com/section/policy/feed/'],
@@ -72,7 +72,7 @@ class BronSeeder extends Seeder
 
             // --- VS: lokaal en regionaal ---
             ['naam' => 'LA Times', 'orientatie' => 'left-center', 'betrouwbaarheid' => 'high', 'feed_url' => 'https://www.latimes.com/local/rss2.0.xml'], // Californie
-            ['naam' => 'CalMatters', 'orientatie' => 'left-center', 'betrouwbaarheid' => null, 'feed_url' => 'https://calmatters.org/feed/'], // Californie
+            ['naam' => 'CalMatters', 'orientatie' => 'left-center', 'betrouwbaarheid' => 'high', 'feed_url' => 'https://calmatters.org/feed/'], // Californie
             ['naam' => 'The Texas Tribune', 'orientatie' => 'left-center', 'betrouwbaarheid' => 'high', 'feed_url' => 'https://www.texastribune.org/feeds/main/'], // Texas
 
             // --- VS: wereldnieuws ---
@@ -110,10 +110,10 @@ class BronSeeder extends Seeder
             ['naam' => 'Euronews', 'orientatie' => 'left-center', 'betrouwbaarheid' => 'high', 'feed_url' => 'https://www.euronews.com/rss'], // EU
             ['naam' => 'Ukrainska Pravda (English)', 'orientatie' => 'left-center', 'betrouwbaarheid' => 'mixed', 'feed_url' => 'https://www.pravda.com.ua/eng/rss/'], // Oekraine
             ['naam' => 'Balkan Insight', 'orientatie' => 'left-center', 'betrouwbaarheid' => 'high', 'feed_url' => 'https://balkaninsight.com/feed/'], // Balkan
+            ['naam' => 'The Local (Europe)', 'orientatie' => 'left-center', 'betrouwbaarheid' => 'high', 'feed_url' => 'https://www.thelocal.com/feeds/rss.php'], // EU (MBFC per landeditie)
             ['naam' => 'RFI (English)', 'orientatie' => 'neutral', 'betrouwbaarheid' => 'mixed', 'feed_url' => 'https://www.rfi.fr/en/rss'], // Frankrijk
             ['naam' => 'France 24', 'orientatie' => 'neutral', 'betrouwbaarheid' => 'high', 'feed_url' => 'https://www.france24.com/en/rss'], // Frankrijk
-            ['naam' => 'The Local (Europe)', 'orientatie' => 'neutral', 'betrouwbaarheid' => null, 'feed_url' => 'https://www.thelocal.com/feeds/rss.php'], // EU
-            ['naam' => 'DutchNews.nl', 'orientatie' => 'neutral', 'betrouwbaarheid' => null, 'feed_url' => 'https://www.dutchnews.nl/feed/'], // Nederland
+            ['naam' => 'DutchNews.nl', 'orientatie' => 'neutral', 'betrouwbaarheid' => 'high', 'feed_url' => 'https://www.dutchnews.nl/feed/'], // Nederland
 
             // --- Midden-Oosten ---
             ['naam' => 'Haaretz', 'orientatie' => 'left', 'betrouwbaarheid' => 'high', 'feed_url' => 'https://www.haaretz.com/srv/haaretz-latest-headlines'], // Israel
@@ -121,13 +121,13 @@ class BronSeeder extends Seeder
             ['naam' => 'The Times of Israel', 'orientatie' => 'left-center', 'betrouwbaarheid' => 'high', 'feed_url' => 'https://www.timesofisrael.com/feed/'], // Israel
             ['naam' => 'Al-Monitor', 'orientatie' => 'left-center', 'betrouwbaarheid' => 'high', 'feed_url' => 'https://www.al-monitor.com/rss'],
             ['naam' => 'Arab News', 'orientatie' => 'right-center', 'betrouwbaarheid' => 'mixed', 'feed_url' => 'https://www.arabnews.com/rss.xml'], // Saoedi-Arabie
-            ['naam' => 'Daily Sabah', 'orientatie' => 'right', 'betrouwbaarheid' => null, 'feed_url' => 'https://www.dailysabah.com/rssFeed/10'], // Turkije (pro-regering)
+            ['naam' => 'Daily Sabah', 'orientatie' => 'right', 'betrouwbaarheid' => 'mixed', 'feed_url' => 'https://www.dailysabah.com/rssFeed/10'], // Turkije (pro-regering)
 
             // --- Azie ---
             ['naam' => 'South China Morning Post', 'orientatie' => 'left-center', 'betrouwbaarheid' => 'mixed', 'feed_url' => 'https://www.scmp.com/rss/91/feed/'], // Hongkong
-            ['naam' => 'Hong Kong Free Press', 'orientatie' => 'left-center', 'betrouwbaarheid' => null, 'feed_url' => 'https://hongkongfp.com/feed/'], // Hongkong
+            ['naam' => 'Hong Kong Free Press', 'orientatie' => 'left-center', 'betrouwbaarheid' => 'high', 'feed_url' => 'https://hongkongfp.com/feed/'], // Hongkong
             ['naam' => 'NDTV: Top stories', 'orientatie' => 'left-center', 'betrouwbaarheid' => 'mixed', 'feed_url' => 'https://feeds.feedburner.com/ndtvnews-top-stories'], // India
-            ['naam' => 'The Hindu: International', 'orientatie' => 'left-center', 'betrouwbaarheid' => null, 'feed_url' => 'https://www.thehindu.com/news/international/feeder/default.rss'], // India
+            ['naam' => 'The Hindu: International', 'orientatie' => 'left-center', 'betrouwbaarheid' => 'mixed', 'feed_url' => 'https://www.thehindu.com/news/international/feeder/default.rss'], // India
             ['naam' => 'Dawn', 'orientatie' => 'left-center', 'betrouwbaarheid' => 'mixed', 'feed_url' => 'https://www.dawn.com/feeds/home'], // Pakistan
             ['naam' => 'Rappler', 'orientatie' => 'left-center', 'betrouwbaarheid' => 'high', 'feed_url' => 'https://www.rappler.com/feed/'], // Filipijnen
             ['naam' => 'Hindustan Times: World', 'orientatie' => 'left-center', 'betrouwbaarheid' => 'mixed', 'feed_url' => 'https://www.hindustantimes.com/feeds/rss/world-news/rssfeed.xml'], // India
@@ -146,15 +146,15 @@ class BronSeeder extends Seeder
             // --- Amerika (buiten de VS) ---
             ['naam' => 'Global News', 'orientatie' => 'left-center', 'betrouwbaarheid' => 'high', 'feed_url' => 'https://globalnews.ca/feed/'], // Canada
             ['naam' => 'MercoPress', 'orientatie' => 'left-center', 'betrouwbaarheid' => 'mixed', 'feed_url' => 'https://en.mercopress.com/rss/'], // Zuid-Amerika
-            ['naam' => 'Mexico News Daily', 'orientatie' => 'neutral', 'betrouwbaarheid' => null, 'feed_url' => 'https://mexiconewsdaily.com/feed/'], // Mexico
+            ['naam' => 'Mexico News Daily', 'orientatie' => 'left-center', 'betrouwbaarheid' => 'high', 'feed_url' => 'https://mexiconewsdaily.com/feed/'], // Mexico
             ['naam' => 'Buenos Aires Times', 'orientatie' => 'right-center', 'betrouwbaarheid' => 'high', 'feed_url' => 'https://www.batimes.com.ar/feed'], // Argentinie
             ['naam' => 'The Globe and Mail: World', 'orientatie' => 'right-center', 'betrouwbaarheid' => 'high', 'feed_url' => 'https://www.theglobeandmail.com/arc/outboundfeeds/rss/category/world/'], // Canada
 
             // --- Afrika ---
             ['naam' => 'Punch', 'orientatie' => 'left-center', 'betrouwbaarheid' => 'mixed', 'feed_url' => 'https://punchng.com/feed/'], // Nigeria
             ['naam' => 'Africanews', 'orientatie' => 'left-center', 'betrouwbaarheid' => 'mixed', 'feed_url' => 'https://www.africanews.com/feed/rss'],
+            ['naam' => 'Premium Times', 'orientatie' => 'left-center', 'betrouwbaarheid' => 'mixed', 'feed_url' => 'https://www.premiumtimesng.com/feed'], // Nigeria
             ['naam' => 'Daily Maverick', 'orientatie' => 'neutral', 'betrouwbaarheid' => 'high', 'feed_url' => 'https://www.dailymaverick.co.za/dmrss/'], // Zuid-Afrika
-            ['naam' => 'Premium Times', 'orientatie' => 'neutral', 'betrouwbaarheid' => null, 'feed_url' => 'https://www.premiumtimesng.com/feed'], // Nigeria
             ['naam' => 'AllAfrica', 'orientatie' => 'neutral', 'betrouwbaarheid' => 'high', 'feed_url' => 'https://allafrica.com/tools/headlines/rdf/latest/headlines.rdf'],
 
             // --- Staatsmedia ---

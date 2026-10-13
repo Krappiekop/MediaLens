@@ -126,7 +126,7 @@ De tests draaien op een SQLite-database in het geheugen. Feeds, Ollama en de AI 
 
 MediaLens wil laten zien hoe bronnen verschillen, maar het systeem maakt zelf ook keuzes. De belangrijkste:
 
-- **Labels gelden per bron, niet per artikel.** Ze komen uit een [dataset van Media Bias Fact Check](https://github.com/idiap/Factual-Reporting-and-Political-Bias-Web-Interactions/blob/main/data/mbfc.csv). Voor 9 bronnen die daar niet in staan, is het label een inschatting.
+- **Labels gelden per bron, niet per artikel.** Ze komen uit een [dataset van Media Bias Fact Check](https://github.com/idiap/Factual-Reporting-and-Political-Bias-Web-Interactions/blob/main/data/mbfc.csv). 9 bronnen die daar niet in staan, zijn met de hand opgezocht op [mediabiasfactcheck.com](https://mediabiasfactcheck.com).
 - **Groepen zijn gelijkenis, geen waarheid.** Twee verhalen over hetzelfde onderwerp kunnen samen in één gebeurtenis komen. Artikelen worden alleen vergeleken met artikelen uit de 48 uur ervoor of erna; nieuws dat langer doorloopt, valt uiteen in meerdere gebeurtenissen.
 - **De samenvatting komt van een taalmodel** en kan zelf vooringenomen zijn. Het model ziet de labels bewust niet.
 - **RSS geeft meestal alleen een korte omschrijving**, geen volledig artikel. Wat daar niet in staat, kan de AI niet samenvatten.

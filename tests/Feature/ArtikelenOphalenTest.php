@@ -160,6 +160,32 @@ class ArtikelenOphalenTest extends TestCase
         $this->assertSame(['Artikel van de werkende feed'], Artikel::pluck('titel')->all());
     }
 
+    public function test_fetching_a_feed_trims_article_links_and_skips_links_that_are_not_http(): void
+    {
+        Http::preventStrayRequests();
+        config(['services.matcher.methode' => 'rake']);
+
+        $bron = Bron::create(['naam' => 'Testnieuws', 'orientatie' => 'neutral']);
+        $bron->feed_url = 'https://feeds.example.test/news.xml';
+        $bron->save();
+
+        $feed = '<?xml version="1.0"?><rss version="2.0"><channel>'
+            ."<item><title>Link met enters</title><link>\n https://news.example.test/enters\n </link>"
+            .'<pubDate>Mon, 12 Oct 2026 08:00:00 GMT</pubDate><description>Tekst.</description></item>'
+            .'<item><title>Javascript-link</title><link>javascript:alert(document.cookie)</link>'
+            .'<pubDate>Mon, 12 Oct 2026 08:00:00 GMT</pubDate><description>Tekst.</description></item>'
+            .'</channel></rss>';
+
+        Http::fake([
+            'https://feeds.example.test/news.xml' => Http::response($feed),
+        ]);
+
+        $this->artisan('artikelen:ophalen')->assertSuccessful();
+        $this->artisan('artikelen:ophalen')->assertSuccessful();
+
+        $this->assertSame(['https://news.example.test/enters'], Artikel::pluck('url')->all());
+    }
+
     public function test_fetching_a_feed_trims_whitespace_around_the_title_of_the_article_and_event(): void
     {
         Http::preventStrayRequests();

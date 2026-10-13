@@ -42,7 +42,10 @@ class ArtikelVergelijker
             ."Waar lijken toon, woordkeuze en nadruk op elkaar, ook over politieke verschillen heen? Noem bronnen bij naam.\n\n"
             .'verschil: analyseer hoe woordkeuze, nadruk en weglatingen de gebeurtenis kleuren. '
             .'Koppel dat aan hoe bronnen schrijven (bijvoorbeeld beladen termen, wie als dader of slachtoffer wordt neergezet, welke details extra aandacht krijgen). '
-            ."Noem bronnen bij naam. Gebruik geen labels als left, right of neutral.\n\n"
+            ."Noem bronnen bij naam.\n\n"
+            .'Bij overeenstemming en verschil: deel bronnen niet in naar politieke kant. Dus geen labels als left, right of neutral, '
+            ."en ook geen 'linkse', 'rechtse', 'conservatieve' of 'progressieve bronnen'. Beschrijf wat een bron schrijft, "
+            ."niet bij welke kant hij hoort. Woorden die een bron zelf gebruikt, mag je wel citeren.\n\n"
             ."categorie: kies precies één categorie die het best past:\n"
             .Categorie::promptUitleg();
 

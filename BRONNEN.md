@@ -2,11 +2,11 @@
 
 Alle nieuwsbronnen van MediaLens, met feed-URL en politieke oriëntatie, plus hoe de feeds getest zijn en welke afvielen. Voor een korte introductie, zie de [README](README.md).
 
-De bronnentabel wordt gevuld via `database/seeders/BronSeeder.php`. De seeder zet 124 feeds in de database, gegroepeerd per regio of categorie en binnen elke groep van links naar rechts. De oriëntatie komt uit de Media Bias Fact Check-dataset van idiap ([`mbfc.csv`](https://github.com/idiap/Factual-Reporting-and-Political-Bias-Web-Interactions/blob/main/data/mbfc.csv)), opgezocht op het domein van de bron. Sinds bouwblok 16 zijn de 25 afwijkende labels daarop gelijkgetrokken. 9 bronnen staan niet in die dataset; hun label blijft een inschatting op basis van AllSides en Media Bias Fact Check: CalMatters, Daily Sabah, DutchNews.nl, Hong Kong Free Press, Mexico News Daily, Premium Times, The Free Press, The Hindu, The Local.
+De bronnentabel wordt gevuld via `database/seeders/BronSeeder.php`. De seeder zet 124 feeds in de database, gegroepeerd per regio of categorie en binnen elke groep van links naar rechts. De oriëntatie komt uit de Media Bias Fact Check-dataset van idiap ([`mbfc.csv`](https://github.com/idiap/Factual-Reporting-and-Political-Bias-Web-Interactions/blob/main/data/mbfc.csv)), opgezocht op het domein van de bron. Sinds bouwblok 16 zijn de 25 afwijkende labels daarop gelijkgetrokken. 9 bronnen staan niet in die dataset: CalMatters, Daily Sabah, DutchNews.nl, Hong Kong Free Press, Mexico News Daily, Premium Times, The Free Press, The Hindu, The Local. Die zijn in bouwblok 17 met de hand opgezocht op mediabiasfactcheck.com (oktober 2026). Zes klopten al; Mexico News Daily, Premium Times en The Local gingen van `neutral` naar `left-center`. Kanttekeningen: Daily Sabah heeft geen eigen pagina en volgt de pagina van moederkrant Sabah; The Local heeft een pagina per landeditie (Zweden, Duitsland, Frankrijk en Oostenrijk zijn alle vier Left-Center en High); de pagina van Mexico News Daily gaf een 403 en is gelezen via een zoekresultaat.
 
-Verdeling: 15 `left`, 57 `left-center`, 21 `neutral`, 12 `right-center`, 19 `right` (RT staat in de dataset als `right-center`, Tehran Times als `right`; beide zijn staatsmedia).
+Verdeling: 15 `left`, 60 `left-center`, 18 `neutral`, 12 `right-center`, 19 `right` (RT staat in de dataset als `right-center`, Tehran Times als `right`; beide zijn staatsmedia).
 
-Sinds bouwblok 17 heeft elke bron ook een `betrouwbaarheid`: de kolom `factual_reporting` uit dezelfde dataset (`high`, `mixed` of `low`). Verdeling: 60 `high`, 52 `mixed`, 3 `low` (Daily Mail, Newsmax, RT), 9 onbekend (dezelfde 9 bronnen buiten de dataset). Voor BBC (`bbc.com`), Sky News (`sky.com`), GB News (`gbnews.uk`), Breitbart (`breitbart.com`) en NDTV (`ndtv.com`) is het site-domein opgezocht, omdat de feed op een ander domein staat. De waarde staat in de seeder, niet in de tabellen hieronder; je ziet hem op `/bronnen`.
+Sinds bouwblok 17 heeft elke bron ook een `betrouwbaarheid`: de kolom `factual_reporting` uit dezelfde dataset (`high`, `mixed` of `low`), en voor de 9 bronnen hierboven de waarde van hun MBFC-pagina. MBFC kent ook "Mostly Factual"; de dataset deelt die in als `mixed` (CNN en The Washington Post staan er zo in), dus Premium Times en The Hindu ook. Verdeling: 65 `high`, 56 `mixed`, 3 `low` (Daily Mail, Newsmax, RT). Voor BBC (`bbc.com`), Sky News (`sky.com`), GB News (`gbnews.uk`), Breitbart (`breitbart.com`) en NDTV (`ndtv.com`) is het site-domein opgezocht, omdat de feed op een ander domein staat. De waarde staat in de seeder, niet in de tabellen hieronder; je ziet hem op `/bronnen`.
 
 VS: politiek:
 
@@ -123,9 +123,9 @@ Europa:
 | Euronews | `https://www.euronews.com/rss` | left-center |
 | Ukrainska Pravda (English) | `https://www.pravda.com.ua/eng/rss/` | left-center |
 | Balkan Insight | `https://balkaninsight.com/feed/` | left-center |
+| The Local (Europe) | `https://www.thelocal.com/feeds/rss.php` | left-center |
 | RFI (English) | `https://www.rfi.fr/en/rss` | neutral |
 | France 24 | `https://www.france24.com/en/rss` | neutral |
-| The Local (Europe) | `https://www.thelocal.com/feeds/rss.php` | neutral |
 | DutchNews.nl | `https://www.dutchnews.nl/feed/` | neutral |
 
 Midden-Oosten:
@@ -171,7 +171,7 @@ Amerika (buiten de VS):
 |---|---|---|
 | Global News | `https://globalnews.ca/feed/` | left-center |
 | MercoPress | `https://en.mercopress.com/rss/` | left-center |
-| Mexico News Daily | `https://mexiconewsdaily.com/feed/` | neutral |
+| Mexico News Daily | `https://mexiconewsdaily.com/feed/` | left-center |
 | Buenos Aires Times | `https://www.batimes.com.ar/feed` | right-center |
 | The Globe and Mail: World | `https://www.theglobeandmail.com/arc/outboundfeeds/rss/category/world/` | right-center |
 
@@ -181,8 +181,8 @@ Afrika:
 |---|---|---|
 | Punch | `https://punchng.com/feed/` | left-center |
 | Africanews | `https://www.africanews.com/feed/rss` | left-center |
+| Premium Times | `https://www.premiumtimesng.com/feed` | left-center |
 | Daily Maverick | `https://www.dailymaverick.co.za/dmrss/` | neutral |
-| Premium Times | `https://www.premiumtimesng.com/feed` | neutral |
 | AllAfrica | `https://allafrica.com/tools/headlines/rdf/latest/headlines.rdf` | neutral |
 
 Staatsmedia:

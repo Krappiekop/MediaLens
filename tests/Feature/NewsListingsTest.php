@@ -89,6 +89,26 @@ class NewsListingsTest extends TestCase
             ->assertSee('name="perspectief"', false);
     }
 
+    public function test_search_treats_percent_and_underscore_as_normal_characters(): void
+    {
+        $bron = Bron::create(['naam' => 'Economisch nieuws', 'orientatie' => 'neutral']);
+
+        foreach (['Rente stijgt met 50% in een jaar', 'Inflatie daalt licht'] as $nummer => $titel) {
+            Artikel::create([
+                'titel' => $titel,
+                'publicatiedatum' => '2026-10-12',
+                'volledige_tekst' => 'Tekst over de economie.',
+                'url' => "https://news.example.test/economie-{$nummer}",
+                'bron_id' => $bron->id,
+                'gebeurtenis_id' => null,
+            ]);
+        }
+
+        $this->assertSame(['Rente stijgt met 50% in een jaar'], $this->get('/artikelen?q=50%25')->viewData('artikelen')->pluck('titel')->all());
+        $this->assertSame(['Rente stijgt met 50% in een jaar'], $this->get('/artikelen?q=%25')->viewData('artikelen')->pluck('titel')->all());
+        $this->assertSame([], $this->get('/artikelen?q=_')->viewData('artikelen')->pluck('titel')->all());
+    }
+
     public function test_articles_page_includes_unassigned_articles_and_filters_them(): void
     {
         $bron = Bron::create(['naam' => 'Lokaal nieuws', 'orientatie' => 'left-center']);

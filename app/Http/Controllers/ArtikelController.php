@@ -11,8 +11,7 @@ class ArtikelController extends Controller
 {
     public function index(Request $request): View
     {
-        $zoekterm = $request->query('q');
-        $zoekterm = is_string($zoekterm) ? trim($zoekterm) : '';
+        $zoekterm = $this->zoekterm($request);
         $status = $request->query('status');
         $status = in_array($status, ['gekoppeld', 'los'], true) ? $status : 'alle';
         $perspectief = $request->query('perspectief');
@@ -26,15 +25,13 @@ class ArtikelController extends Controller
 
         if ($zoekterm !== '') {
             $query->where(function (Builder $query) use ($zoekterm): void {
-                $zoekpatroon = "%{$zoekterm}%";
-
-                $query->where('titel', 'like', $zoekpatroon)
-                    ->orWhere('volledige_tekst', 'like', $zoekpatroon)
-                    ->orWhereHas('bron', function (Builder $bronQuery) use ($zoekpatroon): void {
-                        $bronQuery->where('naam', 'like', $zoekpatroon);
+                $this->bevat($query, 'titel', $zoekterm);
+                $this->bevat($query, 'volledige_tekst', $zoekterm, 'or')
+                    ->orWhereHas('bron', function (Builder $bronQuery) use ($zoekterm): void {
+                        $this->bevat($bronQuery, 'naam', $zoekterm);
                     })
-                    ->orWhereHas('gebeurtenis', function (Builder $gebeurtenisQuery) use ($zoekpatroon): void {
-                        $gebeurtenisQuery->where('onderwerp', 'like', $zoekpatroon);
+                    ->orWhereHas('gebeurtenis', function (Builder $gebeurtenisQuery) use ($zoekterm): void {
+                        $this->bevat($gebeurtenisQuery, 'onderwerp', $zoekterm);
                     });
             });
         }

@@ -408,6 +408,35 @@ class ExampleTest extends TestCase
             ->assertDontSee('Ander onderwerp');
     }
 
+    public function test_detailpagina_slaat_gebeurtenissen_met_een_embedding_van_andere_lengte_over(): void
+    {
+        config(['services.matcher.minimale_similarity_gerelateerd' => 0.7]);
+
+        $bron = Bron::create(['naam' => 'Bron voor gerelateerd', 'orientatie' => 'neutral']);
+        $gebeurtenis = $this->gebeurtenisMetEmbedding($bron, 'Hoofdgebeurtenis', [1.0, 0.0, 0.0]);
+        $this->gebeurtenisMetEmbedding($bron, 'Ander embeddingmodel', [1.0, 0.0]);
+
+        $this->get(route('gebeurtenissen.show', $gebeurtenis))
+            ->assertOk()
+            ->assertDontSee('Ander embeddingmodel');
+    }
+
+    public function test_detailpagina_toont_gerelateerd_zodra_de_gebeurtenis_een_embedding_heeft(): void
+    {
+        config(['services.matcher.minimale_similarity_gerelateerd' => 0.7]);
+
+        $bron = Bron::create(['naam' => 'Bron voor gerelateerd', 'orientatie' => 'neutral']);
+        $gebeurtenis = $this->gebeurtenisMetEmbedding($bron, 'Nog zonder embedding', [1.0, 0.0, 0.0]);
+        $gebeurtenis->update(['embedding' => null]);
+        $this->gebeurtenisMetEmbedding($bron, 'Lijkt erop', [0.99, 0.1, 0.0]);
+
+        $this->get(route('gebeurtenissen.show', $gebeurtenis))->assertOk()->assertDontSee('Lijkt erop');
+
+        $gebeurtenis->update(['embedding' => [1.0, 0.0, 0.0]]);
+
+        $this->get(route('gebeurtenissen.show', $gebeurtenis))->assertOk()->assertSee('Lijkt erop');
+    }
+
     /**
      * @param  list<float>  $embedding
      */

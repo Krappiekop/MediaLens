@@ -12,7 +12,7 @@
     <header class="mt-6 border-b border-line pb-6">
         <p class="mb-2 text-xs font-semibold uppercase tracking-wider text-accent">Berichtgeving vergelijken</p>
         <h1 class="max-w-4xl text-3xl font-semibold leading-tight tracking-tight">{{ $gebeurtenis->onderwerp }}</h1>
-        <p class="mt-3 text-sm text-muted">{{ $gebeurtenis->artikelen->count() }} artikelen uit verschillende bronnen</p>
+        <p class="mt-3 text-sm text-muted">{{ $gebeurtenis->artikelen->count() }} {{ $gebeurtenis->artikelen->count() === 1 ? 'artikel' : 'artikelen uit verschillende bronnen' }}</p>
     </header>
 
     <section class="mt-8">

@@ -66,7 +66,12 @@ class ArtikelenOphalen extends Command
 
             foreach ($xml->channel->item as $item) {
                 $titel = trim((string) $item->title); // titel van het artikel, zonder witregels eromheen
-                $url = (string) $item->link; // url van het artikel
+                $url = trim((string) $item->link); // url van het artikel (The Local zet er enters omheen)
+
+                // alleen http(s): een <link> met bijvoorbeeld javascript:… wordt nooit een artikel
+                if (! $this->isHttpUrl($url)) {
+                    continue;
+                }
                 $publicatiedatum = date('Y-m-d H:i:s', strtotime((string) $item->pubDate)); // publicatietijd van het artikel, in de tijdzone van de app
 
                 // tekst van het artikel
@@ -193,14 +198,20 @@ class ArtikelenOphalen extends Command
         return ['url' => null, 'credit' => null];
     }
 
-    private function isImageUrl(string $url, string $type, string $medium): bool
+    private function isHttpUrl(string $url): bool
     {
         if (filter_var($url, FILTER_VALIDATE_URL) === false) {
             return false;
         }
 
         $scheme = parse_url($url, PHP_URL_SCHEME);
-        if (! is_string($scheme) || ! in_array(strtolower($scheme), ['http', 'https'], true)) {
+
+        return is_string($scheme) && in_array(strtolower($scheme), ['http', 'https'], true);
+    }
+
+    private function isImageUrl(string $url, string $type, string $medium): bool
+    {
+        if (! $this->isHttpUrl($url)) {
             return false;
         }
 

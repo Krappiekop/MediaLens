@@ -19,7 +19,7 @@
         <div class="rounded-lg border border-line bg-surface p-4">
             <dt class="text-xs font-semibold text-muted">Betrouwbaarheid</dt>
             <dd class="mt-1 text-lg font-semibold">{{ $bron->betrouwbaarheidLabel() }}</dd>
-            <dd class="text-xs text-muted">{{ $bron->betrouwbaarheid ? 'factual reporting: '.$bron->betrouwbaarheid : 'niet in de dataset' }}</dd>
+            <dd class="text-xs text-muted">{{ $bron->betrouwbaarheid ? 'factual reporting: '.$bron->betrouwbaarheid : 'nog niet opgezocht' }}</dd>
         </div>
         <div class="rounded-lg border border-line bg-surface p-4">
             <dt class="text-xs font-semibold text-muted">Artikelen</dt>
@@ -47,7 +47,7 @@
                     <li class="p-4">
                         @include('gebeurtenissen.partials.tijd', ['tijdstip' => $artikel->publicatiedatum, 'class' => 'text-xs text-muted'])
                         <h3 class="mt-1 font-semibold leading-snug">
-                            <a href="{{ $artikel->url }}" target="_blank" rel="noopener noreferrer" class="underline decoration-line underline-offset-4 hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">{{ $artikel->titel }}<span class="sr-only"> (opent in een nieuw tabblad)</span></a>
+                            @include('gebeurtenissen.partials.artikellink')
                         </h3>
                         @if ($artikel->gebeurtenis)
                             <a href="{{ route('gebeurtenissen.show', $artikel->gebeurtenis) }}" class="mt-2 inline-block text-sm text-muted underline decoration-line underline-offset-4 hover:text-ink">Gebeurtenis: {{ $artikel->gebeurtenis->onderwerp }}</a>

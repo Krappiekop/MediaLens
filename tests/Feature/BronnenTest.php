@@ -61,6 +61,30 @@ class BronnenTest extends TestCase
             ->assertSee('Omschrijving van Artikel met omschrijving.');
     }
 
+    public function test_article_with_a_non_http_url_is_shown_without_a_link(): void
+    {
+        $bron = Bron::create(['naam' => 'Testkrant', 'orientatie' => 'neutral']);
+        $gebeurtenis = Gebeurtenis::create(['onderwerp' => 'Gebeurtenis met verdachte link']);
+        Artikel::create([
+            'titel' => 'Artikel met javascript-link',
+            'publicatiedatum' => '2026-10-10 09:00:00',
+            'volledige_tekst' => 'Tekst.',
+            'url' => 'javascript:alert(document.cookie)',
+            'bron_id' => $bron->id,
+            'gebeurtenis_id' => $gebeurtenis->id,
+        ]);
+
+        foreach ([route('gebeurtenissen.show', $gebeurtenis), route('bronnen.show', $bron), route('artikelen.index')] as $pagina) {
+            $this->get($pagina)
+                ->assertOk()
+                ->assertSee('Artikel met javascript-link')
+                ->assertDontSee('javascript:alert', false);
+        }
+    }
+
+    /**
+     * Preview: de nieuwste 3 per kolom, de oudere achter "Toon alles".
+     */
     public function test_event_detail_shows_three_articles_per_perspective_and_puts_the_rest_behind_show_all(): void
     {
         $links = Bron::create(['naam' => 'Linkse krant', 'orientatie' => 'left']);
@@ -74,7 +98,7 @@ class BronnenTest extends TestCase
 
         $this->get(route('gebeurtenissen.show', $gebeurtenis))
             ->assertOk()
-            ->assertSeeInOrder(['Links 1', 'Links 2', 'Links 3', 'data-extra-artikelen', 'Links 4', 'Links 5', 'Rechts 1'], false)
+            ->assertSeeInOrder(['Links 5', 'Links 4', 'Links 3', 'data-extra-artikelen', 'Links 2', 'Links 1', 'Rechts 1'], false)
             ->assertSee('aria-controls="meer-links"', false)
             ->assertSee('data-tekst-meer="Toon alle 6 artikelen"', false);
     }

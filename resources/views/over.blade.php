@@ -21,8 +21,8 @@
         MediaLens volgt 124 bronnen uit de VS, het VK, Europa, het Midden-Oosten, Azië, Oceanië,
         Amerika en Afrika. De labels van 115 bronnen komen uit een dataset van Media Bias Fact Check
         (verzameld door onderzoeksinstituut Idiap). Die dataset is een momentopname; Media Bias Fact Check
-        past labels soms later aan. Negen bronnen staan er niet in; hun label is een inschatting op basis van
-        AllSides en Media Bias Fact Check. Staatsmedia zoals RT en Tehran Times passen slecht
+        past labels soms later aan. Negen bronnen staan er niet in; die zijn met de hand opgezocht op de
+        website van Media Bias Fact Check. Staatsmedia zoals RT en Tehran Times passen slecht
         op een links-rechts-as; hun label is een noodoplossing.
     </p>
     <p class="mt-2 leading-relaxed">

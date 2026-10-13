@@ -29,6 +29,18 @@ class Artikel extends Model
         ];
     }
 
+    /**
+     * De URL om naar te linken, alleen als het een http- of https-adres is. Een feed kan in <link> ook
+     * bijvoorbeeld javascript:… zetten; Blade escapet HTML, maar niet het schema van een URL.
+     */
+    public function veiligeUrl(): ?string
+    {
+        $url = trim((string) $this->url);
+        $schema = strtolower((string) parse_url($url, PHP_URL_SCHEME));
+
+        return in_array($schema, ['http', 'https'], true) ? $url : null;
+    }
+
     public function bron(): BelongsTo
     {
         return $this->belongsTo(Bron::class);

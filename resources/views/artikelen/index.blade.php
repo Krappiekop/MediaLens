@@ -63,7 +63,7 @@
                         @include('gebeurtenissen.partials.tijd', ['tijdstip' => $artikel->publicatiedatum])
                     </div>
                     <h2 class="text-lg font-semibold leading-snug">
-                        <a href="{{ $artikel->url }}" target="_blank" rel="noopener noreferrer" class="underline decoration-line underline-offset-4 hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">{{ $artikel->titel }}<span class="sr-only"> (opent in een nieuw tabblad)</span></a>
+                        @include('gebeurtenissen.partials.artikellink')
                     </h2>
                     <p class="mt-3 text-sm leading-relaxed text-muted">{{ \Illuminate\Support\Str::limit($artikel->volledige_tekst, 220) }}</p>
                     @if ($artikel->gebeurtenis)

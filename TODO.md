@@ -234,8 +234,8 @@ Alles wat nog open staat, gegroepeerd op soort. Open punten uit eerdere bouwblok
 **Groeperen en data**
 - [x] Publicatietijd opslaan, niet alleen de datum (`publicatiedatum` is nu een `date`). Daarmee kan: "2 uur geleden" tonen; Hot echt op 48 uur zetten in plaats van "vandaag plus gisteren"; het middernachtprobleem bij het groeperen oplossen
 - [x] Betere titel (`onderwerp`) voor een gebeurtenis: nu is dat de titel van het eerste artikel. Bijvoorbeeld met de embeddings de "meest centrale" titel kiezen (open sinds bouwblok 12)
-- [ ] Matcher: in code documenteren waarom 40 woorden, drempel 6, drempel 0,85 en het venster van 48 uur (`$maxUren`, sinds bouwblok 17; daarvoor de same-day-regel) (open sinds bouwblok 12)
-- [ ] Oriëntatie van de 9 bronnen buiten de idiap-dataset met de hand nalopen op mediabiasfactcheck.com (open sinds bouwblok 15)
+- [x] Matcher: in code documenteren waarom 40 woorden, drempel 6, drempel 0,85 en het venster van 48 uur (`$maxUren`, sinds bouwblok 17; daarvoor de same-day-regel) (open sinds bouwblok 12)
+- [x] Oriëntatie van de 9 bronnen buiten de idiap-dataset met de hand nalopen op mediabiasfactcheck.com (open sinds bouwblok 15)
 
 **Website**
 - [x] Omschrijving onder de artikeltitel op de detailpagina
@@ -249,7 +249,7 @@ Alles wat nog open staat, gegroepeerd op soort. Open punten uit eerdere bouwblok
 **Techniek en onderhoud**
 - [x] Feeds parallel ophalen (`Http::pool()`)
 - [x] Scheduler: `artikelen:ophalen` en `samenvattingen:genereren` automatisch elk uur laten draaien via Laravel `Schedule` in `routes/console.php`
-- [ ] Latere pass gebruiken voor review van matcher-, controller- en summary-kwaliteit met AI-gestuurde feedbackloops (open sinds bouwblok 13)
+- [x] Latere pass gebruiken voor review van matcher-, controller- en summary-kwaliteit met AI-gestuurde feedbackloops (open sinds bouwblok 13)
 
 ### Later / optioneel
 - [ ] Volledige artikeltekst via web scraping of een nieuws-API i.p.v. de RSS-omschrijving in `volledige_tekst`

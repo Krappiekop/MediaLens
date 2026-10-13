@@ -44,7 +44,10 @@ class GebeurtenisMatcher
         return $aantal;
     }
 
-    // tekst die naar het embedding-model gaat: titel + begin van het artikel
+    /**
+     * Tekst die naar het embedding-model gaat: titel plus de eerste 100 woorden. Meer dan de 40 van RAKE, omdat een
+     * embedding naar de hele betekenis kijkt en minder last heeft van een gedeelde promozin. (Notitie 16.)
+     */
     private function embeddingTekst(Artikel $artikel): string
     {
         $tekst = trim(strip_tags((string) $artikel->volledige_tekst));
@@ -54,6 +57,10 @@ class GebeurtenisMatcher
         return trim('clustering: '.$artikel->titel.' '.implode(' ', array_slice($woorden, 0, 100)));
     }
 
+    /**
+     * Tekst voor de RAKE-route: de eerste $leadWoorden woorden van de RSS-omschrijving, of de titel als die leeg is.
+     * Niet de titel zelf: koppen over hetzelfde nieuws verschillen per bron te veel om op gedeelde woorden te matchen.
+     */
     private function vergelijkTekst(Artikel $artikel): string
     {
         // tekst van het artikel
@@ -66,14 +73,34 @@ class GebeurtenisMatcher
 
         // woorden uit de tekst halen
         $woorden = preg_split('/\s+/', $tekst, -1, PREG_SPLIT_NO_EMPTY);
-        // de eerste 40 woorden nemen
 
-        return implode(' ', array_slice($woorden, 0, 40));
+        return implode(' ', array_slice($woorden, 0, $this->leadWoorden));
     }
 
-    private int $minimaleOverlap = 6;   // <--- minimale hoeveelheid trefwoorden die in beide teksten moeten voorkomen om een match te hebben
+    /**
+     * Alleen de lead telt mee bij RAKE. Met de hele omschrijving deelden lange stukken (zoals de Guardian-digest
+     * First Thing) genoeg algemeen journalistiek Engels ("said", "tuesday", "according") met SCMP of NDTV om de
+     * drempel te halen, en kwamen losse onderwerpen in één gebeurtenis. In de eerste 40 woorden staat waar het
+     * artikel over gaat. De volledige tekst blijft in de database voor de AI. (Notitie 3.)
+     */
+    private int $leadWoorden = 40;
 
-    private int $maxUren = 48; // <--- alleen artikelen die binnen 48 uur van elkaar verschenen mogen aan dezelfde gebeurtenis worden gekoppeld
+    /**
+     * Minimaal aantal gedeelde RAKE-trefwoorden voor een match (alleen de RAKE-route). Gekozen op de echte feeds na de
+     * overstap naar RAKE: bij 7 bleven artikelen over hetzelfde nieuws los, bij 5 kwamen ongerelateerde onderwerpen
+     * samen. Het is een knop op deze set bronnen, geen vaste waarde. (Notitie 3.)
+     */
+    private int $minimaleOverlap = 6;
+
+    /**
+     * Venster rond de publicatietijd waarbinnen kandidaten liggen, in beide richtingen. Tot bouwblok 17 was dat dezelfde
+     * kalenderdag, omdat publicatiedatum geen tijd had; daardoor kwam een artikel van 23:50 nooit bij een van 00:10, en
+     * viel nieuws dat de volgende dag doorliep uiteen. 48 uur vangt dat op. Langer maakt het risico groter dat een nieuw
+     * verhaal over hetzelfde onderwerp (een tweede drone-aanval, een volgende rechtszaak) in de oude groep belandt.
+     * De beste-kandidaat-regel en de drempel van 0,85 beperken dat. Verhalen die langer lopen, verbinden de
+     * gerelateerde gebeurtenissen op de detailpagina. (Notitie 13 en 17.)
+     */
+    private int $maxUren = 48;
 
     private ?RakePlus $rake = null;
 
@@ -281,12 +308,17 @@ class GebeurtenisMatcher
 
     /**
      * Cosine similarity tussen twee vectoren: 1 = zelfde betekenis, 0 = niets met elkaar te maken.
+     * Vectoren van verschillende lengte (bijv. na een wissel van OLLAMA_EMBEDDING_MODEL) zijn niet te vergelijken: 0.
      *
      * @param  list<float>  $a
      * @param  list<float>  $b
      */
     private function cosineSimilarity(array $a, array $b): float
     {
+        if (count($a) !== count($b)) {
+            return 0.0;
+        }
+
         $inproduct = 0.0;
         $lengteA = 0.0;
         $lengteB = 0.0;

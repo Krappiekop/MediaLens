@@ -20,8 +20,7 @@ class GebeurtenisController extends Controller
      */
     public function index(Request $request, ?Categorie $categorie = null)
     {
-        $zoekterm = $request->query('q');
-        $zoekterm = is_string($zoekterm) ? trim($zoekterm) : '';
+        $zoekterm = $this->zoekterm($request);
         $filter = $request->query('filter');
         $filter = in_array($filter, ['met', 'zonder'], true) ? $filter : 'alle';
         $perspectief = $request->query('perspectief');
@@ -51,9 +50,9 @@ class GebeurtenisController extends Controller
 
         if ($zoekterm !== '') {
             $query->where(function (Builder $query) use ($zoekterm): void {
-                $query->where('onderwerp', 'like', "%{$zoekterm}%")
+                $this->bevat($query, 'onderwerp', $zoekterm)
                     ->orWhereHas('artikelen', function (Builder $artikelQuery) use ($zoekterm): void {
-                        $artikelQuery->where('titel', 'like', "%{$zoekterm}%");
+                        $this->bevat($artikelQuery, 'titel', $zoekterm);
                     });
             });
         }
@@ -97,7 +96,10 @@ class GebeurtenisController extends Controller
 
     public function show(Gebeurtenis $gebeurtenis)
     {
-        $gebeurtenis->load('samenvatting', 'artikelen.bron');
+        // nieuwste eerst, zodat de preview van 3 per kolom het laatste nieuws toont
+        $gebeurtenis->load(['samenvatting', 'artikelen' => function ($query): void {
+            $query->with('bron')->orderByDesc('publicatiedatum')->orderByDesc('id');
+        }]);
 
         $artikelen = $gebeurtenis->artikelen ?? collect();
         $artikelen->each(function ($artikel): void {
@@ -125,12 +127,15 @@ class GebeurtenisController extends Controller
             return $volgorde[$bakje] ?? 5;
         });
 
-        // Alle embeddings ophalen kost ~0,5 s, dus het resultaat blijft een uur bewaard
-        $gerelateerdeIds = Cache::remember(
-            "gebeurtenissen.{$gebeurtenis->id}.gerelateerd",
-            now()->addHour(),
-            fn (): array => (new GebeurtenisMatcher)->gerelateerdeGebeurtenissen($gebeurtenis),
-        );
+        // Alle embeddings ophalen kost ~0,5 s, dus het resultaat blijft een uur bewaard. Zonder eigen embedding
+        // (nog niet berekend, of Ollama stond uit) niet cachen, anders blijft de lijst een uur leeg als hij er wel komt.
+        $gerelateerdeIds = $gebeurtenis->embedding === null
+            ? []
+            : Cache::remember(
+                "gebeurtenissen.{$gebeurtenis->id}.gerelateerd",
+                now()->addHour(),
+                fn (): array => (new GebeurtenisMatcher)->gerelateerdeGebeurtenissen($gebeurtenis),
+            );
         $gerelateerd = Gebeurtenis::voorKaart()
             ->whereKey($gerelateerdeIds)
             ->get()

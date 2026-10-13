@@ -54,6 +54,16 @@ return [
         'embedding_model' => env('OLLAMA_EMBEDDING_MODEL', 'nomic-embed-text'),
     ],
 
+    /*
+     * minimale_similarity (0,85): cosine similarity tussen twee artikelen om dezelfde gebeurtenis te zijn. Gemeten op
+     * artikelparen van dezelfde dag (notitie 16): vanaf 0,85 meestal echt hetzelfde nieuws dat RAKE miste, tussen 0,80
+     * en 0,85 vooral hetzelfde onderwerp met een ander verhaal (twee verschillende drone-aanvallen), daaronder ander
+     * nieuws. Van de paren uit verschillende RAKE-groepen lag 0,29% boven 0,85 tegen 0,65% boven 0,80.
+     *
+     * minimale_similarity_gerelateerd (0,8): tussen de gemiddelde embeddings van twee gebeurtenissen om als gerelateerd
+     * te tonen. Lager dan de matcher, want gerelateerd hoeft niet hetzelfde feit te zijn. In een steekproef waren
+     * 0,73-0,76 nog losse onderwerpen; vanaf ~0,8 klopte het meestal (notitie 17).
+     */
     'matcher' => [
         'methode' => env('MATCHER_METHODE', 'embeddings'),
         'minimale_similarity' => (float) env('MATCHER_MINIMALE_SIMILARITY', 0.85),
