@@ -25,20 +25,21 @@ Of feeds en samenvattingen kloppen, zie je bij stap 7 tot en met 9. Of de lijst 
 De database hoeft niet handmatig overgezet te worden tussen machines, migraties en seeders bouwen hem overal identiek op.
 
 ## RSS-bronnen
-De bronnentabel wordt gevuld via `database/seeders/BronSeeder.php`. De seeder zet 124 feeds in de database, gegroepeerd per regio of categorie en binnen elke groep van links naar rechts. De oorspronkelijke 22 bronnen hebben hun oriëntatie uit de Media Bias Fact Check dataset. Bij de 102 bronnen uit bouwblok 15 is de oriëntatie een inschatting op basis van AllSides en Media Bias Fact Check, nog niet per bron nagelopen.
+De bronnentabel wordt gevuld via `database/seeders/BronSeeder.php`. De seeder zet 124 feeds in de database, gegroepeerd per regio of categorie en binnen elke groep van links naar rechts. De oriëntatie komt uit de Media Bias Fact Check-dataset van idiap ([`mbfc.csv`](https://github.com/idiap/Factual-Reporting-and-Political-Bias-Web-Interactions/blob/main/data/mbfc.csv)), opgezocht op het domein van de bron. Sinds bouwblok 16 zijn de 25 afwijkende labels daarop gelijkgetrokken. 9 bronnen staan niet in die dataset; hun label blijft een inschatting op basis van AllSides en Media Bias Fact Check: CalMatters, Daily Sabah, DutchNews.nl, Hong Kong Free Press, Mexico News Daily, Premium Times, The Free Press, The Hindu, The Local.
 
-Verdeling: 13 `left`, 51 `left-center`, 31 `neutral`, 8 `right-center`, 21 `right` (waarvan RT en Tehran Times staatsmedia zijn).
+Verdeling: 15 `left`, 57 `left-center`, 21 `neutral`, 12 `right-center`, 19 `right` (RT staat in de dataset als `right-center`, Tehran Times als `right`; beide zijn staatsmedia).
 
 VS: politiek:
 
 | Bron | Feed URL | Oriëntatie |
 |---|---|---|
 | The Nation | `https://www.thenation.com/feed/?post_type=article` | left |
-| Mother Jones | `https://www.motherjones.com/feed/` | left |
 | The Intercept | `https://theintercept.com/feed/?rss` | left |
 | The New Republic | `https://newrepublic.com/rss.xml` | left |
 | Rolling Stone: Politics | `https://www.rollingstone.com/politics/feed/` | left |
 | Talking Points Memo | `https://talkingpointsmemo.com/feed` | left |
+| Mediaite | `https://www.mediaite.com/feed/` | left |
+| Mother Jones | `https://www.motherjones.com/feed/` | left-center |
 | The New York Times: Politics | `https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml` | left-center |
 | The Washington Post: Politics | `https://feeds.washingtonpost.com/rss/politics` | left-center |
 | NPR: Politics | `https://feeds.npr.org/1014/rss.xml` | left-center |
@@ -48,7 +49,6 @@ VS: politiek:
 | LA Times: Politics | `https://www.latimes.com/politics/rss2.0.xml` | left-center |
 | Bloomberg: Politics | `https://feeds.bloomberg.com/politics/news.rss` | left-center |
 | Axios | `https://api.axios.com/feed/` | left-center |
-| Mediaite | `https://www.mediaite.com/feed/` | left-center |
 | The Hill | `https://thehill.com/news/feed/` | neutral |
 | Roll Call | `https://rollcall.com/feed/` | neutral |
 | Semafor | `https://www.semafor.com/rss.xml` | neutral |
@@ -72,21 +72,21 @@ VS: algemeen nieuws:
 | Raw Story | `https://www.rawstory.com/feeds/feed.rss` | left |
 | AlterNet | `https://www.alternet.org/feeds/feed.rss` | left |
 | The New Yorker: News | `https://www.newyorker.com/feed/news` | left |
+| The 19th | `https://19thnews.org/feed/` | left |
 | The New York Times | `https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml` | left-center |
 | The Washington Post: National | `https://feeds.washingtonpost.com/rss/national` | left-center |
 | NBC News | `https://feeds.nbcnews.com/nbcnews/public/news` | left-center |
 | CBS News | `https://www.cbsnews.com/feeds/rss/main.rss` | left-center |
 | ABC News (VS) | `https://abcnews.go.com/abcnews/topstories` | left-center |
 | PBS NewsHour | `https://www.pbs.org/newshour/feeds/rss/headlines` | left-center |
-| The 19th | `https://19thnews.org/feed/` | left-center |
 | The Christian Science Monitor | `https://rss.csmonitor.com/feeds/all` | neutral |
-| Newsweek | `https://www.newsweek.com/rss` | neutral |
 | The Hill: Policy | `https://thehill.com/policy/feed/` | neutral |
 | Military Times | `https://www.militarytimes.com/arc/outboundfeeds/rss/?outputType=xml` | neutral |
+| Newsweek | `https://www.newsweek.com/rss` | right-center |
 | New York Post | `https://nypost.com/feed` | right-center |
 | The Washington Times | `https://www.washingtontimes.com/rss/headlines/news/` | right-center |
+| Fox Business | `https://moxie.foxbusiness.com/google-publisher/latest.xml` | right-center |
 | Fox News: US | `https://moxie.foxnews.com/google-publisher/us.xml` | right |
-| Fox Business | `https://moxie.foxbusiness.com/google-publisher/latest.xml` | right |
 | Breitbart | `https://feeds.feedburner.com/breitbart` | right |
 | The Daily Wire | `https://www.dailywire.com/feeds/rss.xml` | right |
 | TheBlaze | `https://www.theblaze.com/feeds/feed.rss` | right |
@@ -98,7 +98,7 @@ VS: lokaal en regionaal:
 |---|---|---|
 | LA Times | `https://www.latimes.com/local/rss2.0.xml` | left-center |
 | CalMatters | `https://calmatters.org/feed/` | left-center |
-| The Texas Tribune | `https://www.texastribune.org/feeds/main/` | neutral |
+| The Texas Tribune | `https://www.texastribune.org/feeds/main/` | left-center |
 
 VS: wereldnieuws:
 
@@ -110,7 +110,7 @@ VS: wereldnieuws:
 | NBC News: World | `https://feeds.nbcnews.com/nbcnews/public/world` | left-center |
 | CBS News: World | `https://www.cbsnews.com/latest/rss/world` | left-center |
 | LA Times: World & Nation | `https://www.latimes.com/world-nation/rss2.0.xml` | left-center |
-| CNBC: World | `https://www.cnbc.com/id/100727362/device/rss/rss.html` | neutral |
+| CNBC: World | `https://www.cnbc.com/id/100727362/device/rss/rss.html` | left-center |
 | The Hill: International | `https://thehill.com/policy/international/feed/` | neutral |
 | Fox News: World | `https://moxie.foxnews.com/google-publisher/world.xml` | right |
 
@@ -118,13 +118,13 @@ VK en Ierland:
 
 | Bron | Feed URL | Oriëntatie |
 |---|---|---|
-| The Mirror | `https://www.mirror.co.uk/news/world-news/?service=rss` | left |
+| The Mirror | `https://www.mirror.co.uk/news/world-news/?service=rss` | left-center |
 | BBC News: World | `https://feeds.bbci.co.uk/news/world/rss.xml` | left-center |
 | BBC News: US & Canada | `https://feeds.bbci.co.uk/news/world/us_and_canada/rss.xml` | left-center |
 | The Guardian: World | `https://www.theguardian.com/world/rss` | left-center |
 | The Guardian: UK | `https://www.theguardian.com/uk-news/rss` | left-center |
 | The Guardian: US | `https://www.theguardian.com/us-news/rss` | left-center |
-| RTÉ News | `https://www.rte.ie/feeds/rss/?index=/news/` | left-center |
+| RTÉ News | `https://www.rte.ie/feeds/rss/?index=/news/` | neutral |
 | Sky News: World | `https://feeds.skynews.com/feeds/rss/world.xml` | neutral |
 | Sky News: UK | `https://feeds.skynews.com/feeds/rss/uk.xml` | neutral |
 | Daily Mail: World | `https://www.dailymail.co.uk/news/worldnews/index.rss` | right |
@@ -135,28 +135,28 @@ Europa:
 
 | Bron | Feed URL | Oriëntatie |
 |---|---|---|
+| Meduza (English) | `https://meduza.io/rss/en/all` | left |
 | Der Spiegel International | `https://www.spiegel.de/international/index.rss` | left-center |
 | Le Monde (English) | `https://www.lemonde.fr/en/rss/une.xml` | left-center |
-| RFI (English) | `https://www.rfi.fr/en/rss` | left-center |
 | Kyiv Independent | `https://kyivindependent.com/news-archive/rss/` | left-center |
 | The Moscow Times | `https://www.themoscowtimes.com/rss/news` | left-center |
-| Meduza (English) | `https://meduza.io/rss/en/all` | left-center |
+| Deutsche Welle | `https://rss.dw.com/xml/rss-en-world` | left-center |
+| Euronews | `https://www.euronews.com/rss` | left-center |
+| Ukrainska Pravda (English) | `https://www.pravda.com.ua/eng/rss/` | left-center |
+| Balkan Insight | `https://balkaninsight.com/feed/` | left-center |
+| RFI (English) | `https://www.rfi.fr/en/rss` | neutral |
 | France 24 | `https://www.france24.com/en/rss` | neutral |
-| Deutsche Welle | `https://rss.dw.com/xml/rss-en-world` | neutral |
-| Euronews | `https://www.euronews.com/rss` | neutral |
 | The Local (Europe) | `https://www.thelocal.com/feeds/rss.php` | neutral |
 | DutchNews.nl | `https://www.dutchnews.nl/feed/` | neutral |
-| Ukrainska Pravda (English) | `https://www.pravda.com.ua/eng/rss/` | neutral |
-| Balkan Insight | `https://balkaninsight.com/feed/` | neutral |
 
 Midden-Oosten:
 
 | Bron | Feed URL | Oriëntatie |
 |---|---|---|
+| Haaretz | `https://www.haaretz.com/srv/haaretz-latest-headlines` | left |
 | Al Jazeera English | `https://www.aljazeera.com/xml/rss/all.xml` | left-center |
 | The Times of Israel | `https://www.timesofisrael.com/feed/` | left-center |
-| Haaretz | `https://www.haaretz.com/srv/haaretz-latest-headlines` | left-center |
-| Al-Monitor | `https://www.al-monitor.com/rss` | neutral |
+| Al-Monitor | `https://www.al-monitor.com/rss` | left-center |
 | Arab News | `https://www.arabnews.com/rss.xml` | right-center |
 | Daily Sabah | `https://www.dailysabah.com/rssFeed/10` | right |
 
@@ -170,12 +170,12 @@ Azie:
 | The Hindu: International | `https://www.thehindu.com/news/international/feeder/default.rss` | left-center |
 | Dawn | `https://www.dawn.com/feeds/home` | left-center |
 | Rappler | `https://www.rappler.com/feed/` | left-center |
+| Hindustan Times: World | `https://www.hindustantimes.com/feeds/rss/world-news/rssfeed.xml` | left-center |
 | The Japan Times | `https://www.japantimes.co.jp/feed/` | neutral |
-| Bangkok Post: World | `https://www.bangkokpost.com/rss/data/world.xml` | neutral |
 | The Diplomat | `https://thediplomat.com/feed/` | neutral |
 | Asia Times | `https://asiatimes.com/feed/` | neutral |
+| Bangkok Post: World | `https://www.bangkokpost.com/rss/data/world.xml` | right-center |
 | The Times of India | `https://timesofindia.indiatimes.com/rssfeedstopstories.cms` | right-center |
-| Hindustan Times: World | `https://www.hindustantimes.com/feeds/rss/world-news/rssfeed.xml` | right-center |
 | The Straits Times: World | `https://www.straitstimes.com/news/world/rss.xml` | right-center |
 
 Oceanie:
@@ -191,26 +191,26 @@ Amerika (buiten de VS):
 | Bron | Feed URL | Oriëntatie |
 |---|---|---|
 | Global News | `https://globalnews.ca/feed/` | left-center |
-| MercoPress | `https://en.mercopress.com/rss/` | neutral |
-| Buenos Aires Times | `https://www.batimes.com.ar/feed` | neutral |
+| MercoPress | `https://en.mercopress.com/rss/` | left-center |
 | Mexico News Daily | `https://mexiconewsdaily.com/feed/` | neutral |
+| Buenos Aires Times | `https://www.batimes.com.ar/feed` | right-center |
 | The Globe and Mail: World | `https://www.theglobeandmail.com/arc/outboundfeeds/rss/category/world/` | right-center |
 
 Afrika:
 
 | Bron | Feed URL | Oriëntatie |
 |---|---|---|
-| Daily Maverick | `https://www.dailymaverick.co.za/dmrss/` | left-center |
+| Punch | `https://punchng.com/feed/` | left-center |
+| Africanews | `https://www.africanews.com/feed/rss` | left-center |
+| Daily Maverick | `https://www.dailymaverick.co.za/dmrss/` | neutral |
 | Premium Times | `https://www.premiumtimesng.com/feed` | neutral |
-| Punch | `https://punchng.com/feed/` | neutral |
 | AllAfrica | `https://allafrica.com/tools/headlines/rdf/latest/headlines.rdf` | neutral |
-| Africanews | `https://www.africanews.com/feed/rss` | neutral |
 
 Staatsmedia:
 
 | Bron | Feed URL | Oriëntatie |
 |---|---|---|
-| RT | `https://www.rt.com/rss/news/` | right |
+| RT | `https://www.rt.com/rss/news/` | right-center |
 | Tehran Times | `https://www.tehrantimes.com/rss` | right |
 
 Staatsmedia staan in een eigen groep. Hun oriëntatie (`right`) is lastig in te delen en hoort nog eens nagekeken te worden.
@@ -263,9 +263,9 @@ The Nation stond eerder op die onbruikbaar-lijst (layout-HTML plus “appeared f
 
 ### Oriëntatie
 - De oriëntatie komt van een dataset en is een generalisatie per bron, niet per artikel.
-- Sinds bouwblok 15 heeft elk label meerdere bronnen (13 `left`, 51 `left-center`, 31 `neutral`, 8 `right-center`, 21 `right`). `left-center` is nog steeds de grootste groep. De AI krijgt die labels nog steeds niet per artikel in de prompt.
-- De oriëntatie van de 102 nieuwe bronnen is een inschatting op basis van AllSides en Media Bias Fact Check, niet overgenomen uit dezelfde dataset als de eerste 22.
-- Staatsmedia (RT, Tehran Times) hebben het label `right`. Dat label zegt weinig over staatspropaganda; MediaLens heeft daar geen apart veld voor.
+- Sinds bouwblok 15 heeft elk label meerdere bronnen (nu 15 `left`, 57 `left-center`, 21 `neutral`, 12 `right-center`, 19 `right`). `left-center` is nog steeds de grootste groep. De AI krijgt die labels nog steeds niet per artikel in de prompt.
+- 115 van de 124 labels komen uit de MBFC-dataset van idiap. Die dataset is een momentopname: MBFC past labels in de loop van de tijd aan (Mother Jones en Mediaite wijken af van de labels die ik eerder gebruikte). 9 bronnen staan er niet in en houden een inschatting (zie RSS-bronnen).
+- Staatsmedia hebben een gewoon label (RT `right-center`, Tehran Times `right`). Dat label zegt weinig over staatspropaganda; MediaLens heeft daar geen apart veld voor.
 - Bronnen komen uit veel landen, maar de feeds zijn allemaal Engelstalig. RAKE gebruikt `en_US`.
 
 ### Samenvatting
@@ -312,7 +312,7 @@ The Nation stond eerder op die onbruikbaar-lijst (layout-HTML plus “appeared f
 
 ### Transparantie
 - `/over` (`OverController@index`, named route `over`, view `resources/views/over.blade.php`) legt uit wat labels, groepen en samenvatting wel en niet zijn. Geen database, geen AI-call. De casus noemt ook `/transparantie`; de gekozen URL is `/over`.
-- Labels komen uit Media Bias Fact Check per bron, niet per artikel. Bakjes Links / Midden / Rechts zijn weergave. De ruwe label blijft in `bronnen.orientatie`.
+- Labels komen uit Media Bias Fact Check (dataset van idiap) per bron, niet per artikel; 9 bronnen buiten die dataset hebben een inschatting. Bakjes Links / Midden / Rechts zijn weergave. De ruwe label blijft in `bronnen.orientatie`.
 - De matcher groepeert op trefwoordoverlap in de eerste 40 woorden van de RSS-omschrijving, binnen één kalenderdag. Dat is geen bewijs van hetzelfde feit en geen oordeel over wat waar is.
 - De samenvatting komt van DeepSeek via OpenRouter en de Educom-proxy. Dat is een keus, geen neutrale arbiter. De casusformule “Groq/DeepSeek” dekt het model niet: Groq draait hier niet. MBFC-labels gaan niet per artikel mee in de prompt. `volledige_tekst` is de RSS-omschrijving.
 - De footer van de layout heeft een link **Over**. Zonder die link is `/over` alleen bereikbaar via de disclaimer of door de URL te typen.
@@ -499,10 +499,9 @@ The Nation stond eerder op die onbruikbaar-lijst (layout-HTML plus “appeared f
 - [x] Tekstfilter uitgebreid: `first appeared on` (Mediaite), `Like Blaze News? …` (TheBlaze), `Our Standards: The GB News Editorial Charter` (GB News), `Read More: https://…` (Punch), `[…]` wordt `…`
 - [x] Feature-test `ArtikelenOphalenTest` voor elke filterregel, plus een test dat `Read More:` midden in een zin blijft staan
 - [x] Onbruikbare feeds met reden in de README (Atom/RDF, 403, alleen teaser, verouderd, geen verbinding)
-- [ ] Oriëntatie van de 102 nieuwe bronnen per bron nalopen in Media Bias Fact Check
-- [ ] `/over` en het kopje Transparantie noemen alleen Media Bias Fact Check; aanpassen als de nieuwe labels blijven
-- [ ] Atom-feeds ondersteunen (`$xml->entry`), zodat Vox, The Atlantic en Jacobin erbij kunnen
-- [ ] `artikelen:ophalen` draaien met alle 124 bronnen en een steekproef van `volledige_tekst` en de groepen in phpMyAdmin bekijken
+- [x] Oriëntatie van alle bronnen nagelopen in de MBFC-dataset van idiap: 90 klopten, 25 aangepast (seeder, database en tabellen hierboven), 9 staan niet in de dataset
+- [ ] Oriëntatie van de 9 bronnen buiten de dataset met de hand nalopen op mediabiasfactcheck.com
+- [x] `/over` en het kopje Transparantie noemen alleen Media Bias Fact Check; aanpassen als de nieuwe labels blijven
 
 ### Bouwblok 16: Groeperen met embeddings (Ollama)
 - [x] RAKE-matcher kiest de kandidaat met de meeste overlap in plaats van de eerste die de drempel haalt
@@ -516,13 +515,8 @@ The Nation stond eerder op die onbruikbaar-lijst (layout-HTML plus “appeared f
 - [x] Command `artikelen:embeddings` voor bestaande artikelen zonder embedding; 4.206 artikelen in 9 min 42 s (±140 ms per artikel)
 - [x] Drempel afgestemd op echte data: 0,85. Daarboven vooral dezelfde gebeurtenis die RAKE miste, tussen 0,80 en 0,85 vooral hetzelfde onderwerp met een ander verhaal
 - [x] Tests: beste kandidaat wint, nieuwe gebeurtenis onder de drempel, embeddings via de feed opgeslagen, terugval op RAKE als Ollama onbereikbaar is
-- [ ] Bestaande gebeurtenissen opnieuw koppelen met embeddings en de groepen vergelijken met de RAKE-groepen
-- [ ] Controleren of brede onderwerpen (Trump/Oekraïne) niet te veel samenvallen; anders drempel verhogen of tijdvenster aanpassen
 
 ### Later / optioneel
 - [ ] Scheduler: `artikelen:ophalen` + `samenvattingen:genereren` via Laravel `Schedule`
-- [ ] Framing-analyse uit bouwblok 4 als apart veld opslaan en tonen (`vergelijk()` is uitgecommentarieerd; deel van die vraag zit nu in overeenstemming/verschil van `samenvat()`)
-- [ ] Feature-tests voor `index` / `show`
-- [x] Embeddings + vectorsimilariteit i.p.v. trefwoordoverlap (casus noemt dit als mogelijke clustering). Zie bouwblok 16
 - [ ] Volledige artikeltekst via web scraping of een nieuws-API i.p.v. de RSS-omschrijving in `volledige_tekst`
 - [ ] Oriëntatie per artikel via AI / tekstclassificatie i.p.v. alleen het MBFC-label per bron

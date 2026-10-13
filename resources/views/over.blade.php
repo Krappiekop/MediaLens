@@ -12,10 +12,18 @@
 
     <h2 class="mt-8 text-xl font-semibold">Labels per bron, niet per artikel</h2>
     <p class="mt-2 leading-relaxed">
-        Elke bron heeft één politieke oriëntatie uit de dataset van Media Bias Fact Check:
-        left, left-center, neutral, right-center of right. Dat is een generalisatie van de hele site,
-        niet een oordeel over dit ene artikel. Een stuk van The New York Times krijgt left-center
-        omdat de bron dat label heeft, niet omdat een model de tekst heeft geclassificeerd.
+        Elke bron heeft één politieke oriëntatie: left, left-center, neutral, right-center of right.
+        Dat is een generalisatie van de hele site, niet een oordeel over dit ene artikel.
+        Een stuk van The New York Times krijgt left-center omdat de bron dat label heeft,
+        niet omdat een model de tekst heeft geclassificeerd.
+    </p>
+    <p class="mt-2 leading-relaxed">
+        MediaLens volgt 124 bronnen uit de VS, het VK, Europa, het Midden-Oosten, Azië, Oceanië,
+        Amerika en Afrika. De labels van 115 bronnen komen uit een dataset van Media Bias Fact Check
+        (verzameld door onderzoeksinstituut Idiap). Die dataset is een momentopname; Media Bias Fact Check
+        past labels soms later aan. Negen bronnen staan er niet in; hun label is een inschatting op basis van
+        AllSides en Media Bias Fact Check. Staatsmedia zoals RT en Tehran Times passen slecht
+        op een links-rechts-as; hun label is een noodoplossing.
     </p>
     <p class="mt-2 leading-relaxed">
         De bakjes Links, Midden en Rechts op de detailpagina zijn alleen weergave.
@@ -23,21 +31,34 @@
         In de database blijft de oorspronkelijke label staan. Die zie je onder de titel, bij de bronnaam.
     </p>
 
-    <h2 class="mt-8 text-xl font-semibold">Groepen zijn trefwoordoverlap, geen waarheid</h2>
+    <h2 class="mt-8 text-xl font-semibold">Groepen zijn gelijkenis, geen waarheid</h2>
     <p class="mt-2 leading-relaxed">
-        Artikelen komen in één gebeurtenis als ze in de eerste 40 woorden van de RSS-omschrijving
-        genoeg trefwoorden delen, binnen één kalenderdag. Dat is geen bewijs dat ze hetzelfde feit
-        beschrijven, en al helemaal geen oordeel over wat waar is. Koppen verschillen te sterk per bron,
-        daarom vergelijkt de matcher de omschrijving, niet de titel.
+        Artikelen komen in één gebeurtenis als hun tekst genoeg op elkaar lijkt, binnen één kalenderdag.
+        Daarvoor zet een klein taalmodel (nomic-embed-text, lokaal via Ollama) de titel en het begin van
+        de RSS-omschrijving om in een reeks getallen die de betekenis weergeeft. Een nieuw artikel komt bij
+        de gebeurtenis van het artikel dat er het meest op lijkt, als die gelijkenis hoog genoeg is.
+        Zo kunnen ook artikelen samenkomen die andere woorden gebruiken voor hetzelfde nieuws.
+    </p>
+    <p class="mt-2 leading-relaxed">
+        Is dat model niet beschikbaar, dan valt MediaLens terug op gedeelde trefwoorden in de eerste 40 woorden
+        van de omschrijving. Beide methodes zijn geen bewijs dat artikelen hetzelfde feit beschrijven,
+        en al helemaal geen oordeel over wat waar is. Twee verschillende verhalen over hetzelfde onderwerp
+        kunnen in één groep belanden, en een artikel van vlak voor middernacht komt niet bij een artikel
+        van vlak erna.
     </p>
 
     <h2 class="mt-8 text-xl font-semibold">De samenvatting is geen neutrale scheidsrechter</h2>
     <p class="mt-2 leading-relaxed">
         De tekst onder Kernfeiten, Betrokkenen, Overeenstemming en Verschil komt van een taalmodel
         (DeepSeek, via OpenRouter en de Educom-proxy). Dat model is een keus, geen neutrale arbiter.
-        Het kan zelf vooringenomen zijn. Het krijgt de Media Bias Fact Check-labels niet per artikel te zien,
+        Het kan zelf vooringenomen zijn. Het krijgt de oriëntatielabels niet per artikel te zien,
         zodat het die labels niet nabauwt. Overeenstemming en verschil gaan over schrijfwijze,
         niet over welke bron “gelijk” heeft.
+    </p>
+    <p class="mt-2 leading-relaxed">
+        Hetzelfde model kiest ook het onderwerp van een gebeurtenis (Wereld, Politiek, Economie,
+        Tech &amp; Wetenschap, Sport of Overig). Die indeling bepaalt waar de gebeurtenis in het menu staat,
+        en kan net zo goed fout zijn.
     </p>
     <p class="mt-2 leading-relaxed">
         De kolom volledige tekst is de RSS-omschrijving, meestal geen compleet artikel.
