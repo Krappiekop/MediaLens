@@ -126,5 +126,5 @@ MediaLens wil laten zien hoe bronnen verschillen, maar het systeem maakt zelf oo
 |---|---|
 | [BRONNEN.md](BRONNEN.md) | Alle 124 bronnen met feed-URL en oriëntatie, hoe ze getest zijn, en welke feeds afvielen |
 | [ONTWERPKEUZES.md](ONTWERPKEUZES.md) | Technische keuzes en beperkingen per onderdeel: feeds, groeperen, samenvatting, overzicht, detailpagina |
-| [TODO.md](TODO.md) | Voortgang per bouwblok en open punten |
-| [notities/](notities/) | Mijn leernotities per bouwblok: wat ik gebouwd heb en waarom |
+| [TODO.md](TODO.md) | Voortgang per fase en bouwblok, met alle open punten onder Volgende stappen |
+| [notities/](notities/) | Mijn leernotities per bouwblok, ingedeeld in dezelfde fases als TODO.md: wat ik gebouwd heb en waarom |
