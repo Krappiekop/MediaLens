@@ -57,6 +57,7 @@ return [
     'matcher' => [
         'methode' => env('MATCHER_METHODE', 'embeddings'),
         'minimale_similarity' => (float) env('MATCHER_MINIMALE_SIMILARITY', 0.85),
+        'minimale_similarity_gerelateerd' => (float) env('MATCHER_MINIMALE_SIMILARITY_GERELATEERD', 0.8),
     ],
 
 ];

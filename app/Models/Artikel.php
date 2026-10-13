@@ -24,6 +24,7 @@ class Artikel extends Model
     protected function casts(): array
     {
         return [
+            'publicatiedatum' => 'datetime',
             'embedding' => 'array',
         ];
     }

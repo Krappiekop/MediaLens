@@ -14,7 +14,7 @@ RSS-feeds ──► artikelen:ophalen ──► groeperen ──► samenvatting
 ```
 
 1. **Ophalen.** Een Artisan-command haalt elke RSS-feed op, haalt HTML en vaste reclamezinnen uit de tekst en slaat nieuwe artikelen op. Een URL die al bestaat, wordt overgeslagen.
-2. **Groeperen.** Elk nieuw artikel krijgt een *embedding*: een reeks getallen die de betekenis van de tekst weergeeft, gemaakt door een lokaal model (`nomic-embed-text` via [Ollama](https://ollama.com)). Het artikel komt bij de gebeurtenis van het artikel van dezelfde dag dat er het meest op lijkt. Lijkt niets genoeg, dan begint het een nieuwe gebeurtenis. Draait Ollama niet, dan valt MediaLens terug op gedeelde trefwoorden (RAKE).
+2. **Groeperen.** Elk nieuw artikel krijgt een *embedding*: een reeks getallen die de betekenis van de tekst weergeeft, gemaakt door een lokaal model (`nomic-embed-text` via [Ollama](https://ollama.com)). Het artikel komt bij de gebeurtenis van het artikel uit de 48 uur ervoor of erna dat er het meest op lijkt. Lijkt niets genoeg, dan begint het een nieuwe gebeurtenis. Draait Ollama niet, dan valt MediaLens terug op gedeelde trefwoorden (RAKE).
 3. **Samenvatten.** Voor elke gebeurtenis met minstens twee artikelen schrijft een taalmodel (DeepSeek, via de Educom-proxy) een samenvatting in vier velden en kiest het een onderwerp, zoals Politiek of Wereld.
 4. **Tonen.** De website zet de artikelen per gebeurtenis in drie kolommen, op basis van het label van hun bron.
 
@@ -22,11 +22,13 @@ RSS-feeds ──► artikelen:ophalen ──► groeperen ──► samenvatting
 
 | URL | Wat je ziet |
 |---|---|
-| `/` | Homepage: **Hot** (meeste artikelen in de laatste 48 uur), per onderwerp de nieuwste gebeurtenissen, en de gebeurtenissen met de meeste artikelen |
+| `/` | Homepage: **Hot** (meeste artikelen in de laatste 48 uur), **Blindspot** (gebeurtenissen die bijna alleen door links of door rechts worden gebracht), per onderwerp de nieuwste gebeurtenissen, en de gebeurtenissen met de meeste artikelen |
 | `/onderwerpen/{onderwerp}` | Eén onderwerp (bijv. `/onderwerpen/politiek`), met bovenaan de 3 trending gebeurtenissen |
 | `/gebeurtenissen` | Alle gebeurtenissen, met zoeken en filters op samenvatting en perspectief |
-| `/gebeurtenissen/{id}` | Eén gebeurtenis: samenvatting en de artikelen in de kolommen Links, Midden en Rechts |
+| `/gebeurtenissen/{id}` | Eén gebeurtenis: de artikelen in de kolommen Links, Midden en Rechts, de samenvatting en tot 3 gerelateerde gebeurtenissen |
 | `/artikelen` | Alle losse artikelen, ook die nog niet bij een gebeurtenis horen |
+| `/bronnen` | Alle bronnen per Links, Midden en Rechts, met hun betrouwbaarheid |
+| `/bronnen/{id}` | Eén bron: label, betrouwbaarheid, aantal artikelen en gebeurtenissen, en de laatste artikelen |
 | `/over` | Uitleg voor bezoekers: wat de labels, groepen en samenvatting wel en niet betekenen |
 
 ## Tech stack
@@ -77,16 +79,25 @@ composer run dev
 
 Dit start onder andere de Laravel-server en Vite tegelijk. Open daarna `http://127.0.0.1:8000`. Liever los? Draai `php artisan serve` en `npm run dev` in twee terminals.
 
+Wil je dat MediaLens elk uur zelf nieuwe artikelen ophaalt en samenvat? Laat dan in een extra terminal de scheduler draaien:
+
+```bash
+php artisan schedule:work
+```
+
+Op een server doe je dat met één cron-regel die elke minuut `php artisan schedule:run` draait.
+
 > **XAMPP:** de Apache van XAMPP draait PHP 8.2 en kan Laravel 13 niet starten. Gebruik `php artisan serve` (of `composer run dev`) met een PHP 8.4+ op de command line. phpMyAdmin via XAMPP werkt gewoon.
 
 ## Commands
 
 | Command | Wat het doet |
 |---|---|
-| `php artisan artikelen:ophalen` | Haalt alle feeds op, slaat nieuwe artikelen op, maakt embeddings en koppelt ze aan een gebeurtenis |
-| `php artisan samenvattingen:genereren {id?}` | Maakt of vernieuwt samenvattingen voor gebeurtenissen met 2+ artikelen, en kiest het onderwerp |
+| `php artisan artikelen:ophalen` | Haalt alle feeds op (10 tegelijk), slaat nieuwe artikelen op, maakt embeddings en koppelt ze aan een gebeurtenis. Draait elk uur via de scheduler |
+| `php artisan samenvattingen:genereren {id?}` | Maakt of vernieuwt samenvattingen voor gebeurtenissen met 2+ artikelen, en kiest het onderwerp. Draait elk uur via de scheduler, na het ophalen |
 | `php artisan gebeurtenissen:categoriseren {id?}` | Deelt gebeurtenissen zonder onderwerp alsnog in |
 | `php artisan artikelen:embeddings` | Maakt embeddings voor bestaande artikelen die er nog geen hebben |
+| `php artisan gebeurtenissen:bijwerken {id?}` | Kiest de meest centrale titel als onderwerp en berekent de gemiddelde embedding (voor gerelateerde gebeurtenissen). Gebeurt bij het koppelen al vanzelf; dit is voor bestaande data |
 
 ## Configuratie
 
@@ -99,6 +110,7 @@ Alle instellingen staan in `.env`; de standaardwaarden staan in `.env.example`.
 | `OLLAMA_EMBEDDING_MODEL` | `nomic-embed-text` | Model voor embeddings |
 | `MATCHER_METHODE` | `embeddings` | `embeddings` of `rake` (alleen trefwoorden) |
 | `MATCHER_MINIMALE_SIMILARITY` | `0.85` | Hoe sterk artikelen moeten lijken om samen een gebeurtenis te vormen (0 tot 1) |
+| `MATCHER_MINIMALE_SIMILARITY_GERELATEERD` | `0.8` | Hoe sterk een andere gebeurtenis moet lijken om als gerelateerd te tonen (0 tot 1) |
 
 Na een wijziging in `.env`: `php artisan config:clear`.
 
@@ -115,7 +127,7 @@ De tests draaien op een SQLite-database in het geheugen. Feeds, Ollama en de AI 
 MediaLens wil laten zien hoe bronnen verschillen, maar het systeem maakt zelf ook keuzes. De belangrijkste:
 
 - **Labels gelden per bron, niet per artikel.** Ze komen uit een [dataset van Media Bias Fact Check](https://github.com/idiap/Factual-Reporting-and-Political-Bias-Web-Interactions/blob/main/data/mbfc.csv). Voor 9 bronnen die daar niet in staan, is het label een inschatting.
-- **Groepen zijn gelijkenis, geen waarheid.** Twee verhalen over hetzelfde onderwerp kunnen samen in één gebeurtenis komen. Artikelen worden alleen binnen dezelfde kalenderdag vergeleken.
+- **Groepen zijn gelijkenis, geen waarheid.** Twee verhalen over hetzelfde onderwerp kunnen samen in één gebeurtenis komen. Artikelen worden alleen vergeleken met artikelen uit de 48 uur ervoor of erna; nieuws dat langer doorloopt, valt uiteen in meerdere gebeurtenissen.
 - **De samenvatting komt van een taalmodel** en kan zelf vooringenomen zijn. Het model ziet de labels bewust niet.
 - **RSS geeft meestal alleen een korte omschrijving**, geen volledig artikel. Wat daar niet in staat, kan de AI niet samenvatten.
 - **Alleen Engelstalige RSS 2.0-feeds.** Atom-feeds worden nog niet gelezen.

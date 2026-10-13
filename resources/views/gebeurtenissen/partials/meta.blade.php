@@ -3,7 +3,7 @@
         <span class="font-semibold uppercase tracking-wider text-accent">{{ $gebeurtenis->categorie->label() }}</span>
         <span aria-hidden="true">·</span>
     @endif
-    <time datetime="{{ $gebeurtenis->artikelen_max_publicatiedatum }}">{{ date('d-m-Y', strtotime($gebeurtenis->artikelen_max_publicatiedatum)) }}</time>
+    @include('gebeurtenissen.partials.tijd', ['tijdstip' => $gebeurtenis->artikelen_max_publicatiedatum])
     <span aria-hidden="true">·</span>
     <span>{{ $gebeurtenis->artikelen_count }} artikelen</span>
 </div>

@@ -6,9 +6,10 @@ use App\Models\Artikel;
 use App\Models\Bron;
 use App\Services\GebeurtenisMatcher;
 use Illuminate\Console\Command;
-use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\Pool;
 use Illuminate\Support\Facades\Http;
 use SimpleXMLElement;
+use Throwable;
 
 class ArtikelenOphalen extends Command
 {
@@ -16,20 +17,31 @@ class ArtikelenOphalen extends Command
 
     protected $description = 'Haalt artikelen op bij alle bronnen met een werkende feed-URL.';
 
+    private int $gelijktijdigeVerzoeken = 10; // <--- zoveel feeds tegelijk ophalen; verwerken gebeurt daarna per bron na elkaar
+
     public function handle(): int
     {
         $bronnen = Bron::whereNotNull('feed_url')->get();
 
         $matcher = new GebeurtenisMatcher;
 
+        // alle feeds parallel ophalen, de antwoorden staan onder het id van de bron
+        $this->info("{$bronnen->count()} feeds ophalen...");
+        $antwoorden = Http::pool(
+            fn (Pool $pool): array => $bronnen
+                ->map(fn (Bron $bron) => $pool->as((string) $bron->id)->get($bron->feed_url))
+                ->all(),
+            concurrency: $this->gelijktijdigeVerzoeken,
+        );
+
         foreach ($bronnen as $bron) {
-            $this->info("Ophalen bij {$bron->naam}...");
+            $this->info("Verwerken van {$bron->naam}...");
+            $response = $antwoorden[(string) $bron->id];
 
             // bij fout, geen verbinding, dan error en continue met de volgende bron
-            try {
-                $response = Http::get($bron->feed_url);
-            } catch (ConnectionException $e) {
-                $this->error("Geen verbinding met {$bron->naam}: {$e->getMessage()}");
+            // (in een pool komt een verbindingsfout terug als exception in plaats van gegooid te worden)
+            if ($response instanceof Throwable) {
+                $this->error("Geen verbinding met {$bron->naam}: {$response->getMessage()}");
 
                 continue;
             }
@@ -53,9 +65,9 @@ class ArtikelenOphalen extends Command
             $nieuweArtikelen = [];
 
             foreach ($xml->channel->item as $item) {
-                $titel = (string) $item->title; // titel van het artikel
+                $titel = trim((string) $item->title); // titel van het artikel, zonder witregels eromheen
                 $url = (string) $item->link; // url van het artikel
-                $publicatiedatum = date('Y-m-d', strtotime((string) $item->pubDate)); // publicatiedatum van het artikel
+                $publicatiedatum = date('Y-m-d H:i:s', strtotime((string) $item->pubDate)); // publicatietijd van het artikel, in de tijdzone van de app
 
                 // tekst van het artikel
                 $tekst = (string) $item->description;
@@ -90,6 +102,11 @@ class ArtikelenOphalen extends Command
                 if ($bestaandArtikel !== null) {
                     if ($bestaandArtikel->afbeelding_url === null && $afbeelding['url'] !== null) {
                         $bestaandArtikel->update($afbeelding);
+                    }
+
+                    // artikelen van vóór bouwblok 17 hebben alleen een datum (00:00:00): de tijd alsnog invullen
+                    if ($bestaandArtikel->publicatiedatum->format('H:i:s') === '00:00:00') {
+                        $bestaandArtikel->update(['publicatiedatum' => $publicatiedatum]);
                     }
 
                     continue;

@@ -13,12 +13,14 @@ class Gebeurtenis extends Model
     protected $fillable = [
         'onderwerp',
         'categorie',
+        'embedding',
     ];
 
     protected function casts(): array
     {
         return [
             'categorie' => Categorie::class,
+            'embedding' => 'array',
         ];
     }
 
@@ -30,6 +32,26 @@ class Gebeurtenis extends Model
     public function samenvatting()
     {
         return $this->hasOne(Samenvatting::class);
+    }
+
+    /**
+     * 'links' of 'rechts' als de gebeurtenis bijna alleen door die kant wordt gebracht, anders null.
+     * Telt alleen links- en rechts-artikelen (Midden niet): minstens 3 samen, en minstens 80% van één kant.
+     * Vereist voorKaart() voor links_count en rechts_count.
+     */
+    public function blindspotKant(): ?string
+    {
+        $linksEnRechts = $this->links_count + $this->rechts_count;
+
+        if ($linksEnRechts < 3) {
+            return null;
+        }
+
+        return match (true) {
+            $this->links_count / $linksEnRechts >= 0.8 => 'links',
+            $this->rechts_count / $linksEnRechts >= 0.8 => 'rechts',
+            default => null,
+        };
     }
 
     /**
@@ -45,24 +67,26 @@ class Gebeurtenis extends Model
      */
     public function scopeVoorKaart(Builder $query): void
     {
-        $query->withCount([
-            'artikelen',
-            'artikelen as links_count' => function ($query) {
-                $query->whereHas('bron', function ($bron) {
-                    $bron->whereIn('orientatie', ['left', 'left-center']);
-                });
-            },
-            'artikelen as midden_count' => function ($query) {
-                $query->whereHas('bron', function ($bron) {
-                    $bron->where('orientatie', 'neutral');
-                });
-            },
-            'artikelen as rechts_count' => function ($query) {
-                $query->whereHas('bron', function ($bron) {
-                    $bron->whereIn('orientatie', ['right-center', 'right']);
-                });
-            },
-        ])
+        // zonder de embedding: die is groot en een kaart heeft hem niet nodig
+        $query->select(['gebeurtenissen.id', 'gebeurtenissen.onderwerp', 'gebeurtenissen.categorie'])
+            ->withCount([
+                'artikelen',
+                'artikelen as links_count' => function ($query) {
+                    $query->whereHas('bron', function ($bron) {
+                        $bron->whereIn('orientatie', ['left', 'left-center']);
+                    });
+                },
+                'artikelen as midden_count' => function ($query) {
+                    $query->whereHas('bron', function ($bron) {
+                        $bron->where('orientatie', 'neutral');
+                    });
+                },
+                'artikelen as rechts_count' => function ($query) {
+                    $query->whereHas('bron', function ($bron) {
+                        $bron->whereIn('orientatie', ['right-center', 'right']);
+                    });
+                },
+            ])
             ->withMax('artikelen', 'publicatiedatum')
             ->with(['artikelen' => function ($query) {
                 $query->select(['id', 'gebeurtenis_id', 'titel', 'afbeelding_url', 'afbeelding_credit'])
@@ -75,17 +99,16 @@ class Gebeurtenis extends Model
 
     /**
      * Minstens 2 artikelen in de laatste 48 uur, meeste recente artikelen eerst. Vereist voorKaart() voor de tiebreaker.
-     * publicatiedatum is een datum zonder tijd, dus de laatste 48 uur is vandaag plus gisteren.
      */
     public function scopeHot(Builder $query): void
     {
-        $sinds = now()->subDay()->toDateString();
+        $sinds = now()->subHours(48);
 
         $query->whereHas('artikelen', function (Builder $artikelQuery) use ($sinds): void {
-            $artikelQuery->whereDate('publicatiedatum', '>=', $sinds);
+            $artikelQuery->where('publicatiedatum', '>=', $sinds);
         }, '>=', 2)
             ->withCount(['artikelen as recente_artikelen_count' => function (Builder $artikelQuery) use ($sinds): void {
-                $artikelQuery->whereDate('publicatiedatum', '>=', $sinds);
+                $artikelQuery->where('publicatiedatum', '>=', $sinds);
             }])
             ->orderByDesc('recente_artikelen_count')
             ->nieuwsteEerst();

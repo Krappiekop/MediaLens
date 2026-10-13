@@ -6,6 +6,8 @@ De bronnentabel wordt gevuld via `database/seeders/BronSeeder.php`. De seeder ze
 
 Verdeling: 15 `left`, 57 `left-center`, 21 `neutral`, 12 `right-center`, 19 `right` (RT staat in de dataset als `right-center`, Tehran Times als `right`; beide zijn staatsmedia).
 
+Sinds bouwblok 17 heeft elke bron ook een `betrouwbaarheid`: de kolom `factual_reporting` uit dezelfde dataset (`high`, `mixed` of `low`). Verdeling: 60 `high`, 52 `mixed`, 3 `low` (Daily Mail, Newsmax, RT), 9 onbekend (dezelfde 9 bronnen buiten de dataset). Voor BBC (`bbc.com`), Sky News (`sky.com`), GB News (`gbnews.uk`), Breitbart (`breitbart.com`) en NDTV (`ndtv.com`) is het site-domein opgezocht, omdat de feed op een ander domein staat. De waarde staat in de seeder, niet in de tabellen hieronder; je ziet hem op `/bronnen`.
+
 VS: politiek:
 
 | Bron | Feed URL | Oriëntatie |

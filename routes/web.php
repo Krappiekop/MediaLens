@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ArtikelController;
+use App\Http\Controllers\BronController;
 use App\Http\Controllers\GebeurtenisController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OverController;
@@ -20,6 +21,12 @@ Route::get('/artikelen', [ArtikelController::class, 'index'])
 
 Route::get('/gebeurtenissen/{gebeurtenis}', [GebeurtenisController::class, 'show'])
     ->name('gebeurtenissen.show');
+
+Route::get('/bronnen', [BronController::class, 'index'])
+    ->name('bronnen.index');
+
+Route::get('/bronnen/{bron}', [BronController::class, 'show'])
+    ->name('bronnen.show');
 
 Route::get('/over', [OverController::class, 'index'])
     ->name('over');

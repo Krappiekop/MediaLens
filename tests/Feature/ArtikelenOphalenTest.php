@@ -4,8 +4,11 @@ namespace Tests\Feature;
 
 use App\Models\Artikel;
 use App\Models\Bron;
+use Illuminate\Console\Scheduling\Event;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
@@ -44,6 +47,23 @@ class ArtikelenOphalenTest extends TestCase
                 'De senator reageerde fel op de kritiek en zei dat…',
             ],
         ];
+    }
+
+    public function test_feeds_are_fetched_and_then_summarised_every_hour_without_overlapping(): void
+    {
+        $taken = collect(app(Schedule::class)->events())
+            ->map(fn (Event $taak): array => [
+                'command' => trim(Str::afterLast($taak->command, ' '), "'\""),
+                'cron' => $taak->expression,
+                'zonderOverlap' => $taak->withoutOverlapping,
+            ])
+            ->values()
+            ->all();
+
+        $this->assertSame([
+            ['command' => 'artikelen:ophalen', 'cron' => '0 * * * *', 'zonderOverlap' => true],
+            ['command' => 'samenvattingen:genereren', 'cron' => '0 * * * *', 'zonderOverlap' => true],
+        ], $taken);
     }
 
     #[DataProvider('boilerplateProvider')]
@@ -108,6 +128,111 @@ class ArtikelenOphalenTest extends TestCase
 
         $artikel = Artikel::where('url', 'https://news.example.test/leesactie')->firstOrFail();
         $this->assertSame('The campaign is called Read More: Books for Everyone and starts today.', $artikel->volledige_tekst);
+    }
+
+    public function test_fetching_feeds_in_parallel_skips_a_failing_feed_and_still_processes_the_others(): void
+    {
+        Http::preventStrayRequests();
+        config(['services.matcher.methode' => 'rake']);
+
+        foreach (['Onbereikbaar' => 'https://kapot.example.test/feed.xml', 'Fout' => 'https://fout.example.test/feed.xml', 'Werkend' => 'https://werkt.example.test/feed.xml'] as $naam => $feedUrl) {
+            $bron = Bron::create(['naam' => $naam, 'orientatie' => 'neutral']);
+            $bron->feed_url = $feedUrl;
+            $bron->save();
+        }
+
+        Http::fake([
+            'https://kapot.example.test/feed.xml' => Http::failedConnection(),
+            'https://fout.example.test/feed.xml' => Http::response('', 500),
+            'https://werkt.example.test/feed.xml' => Http::response('<?xml version="1.0"?><rss version="2.0"><channel><item>'
+                .'<title>Artikel van de werkende feed</title>'
+                .'<link>https://werkt.example.test/artikel</link>'
+                .'<pubDate>Mon, 12 Oct 2026 08:00:00 GMT</pubDate>'
+                .'<description>Tekst.</description>'
+                .'</item></channel></rss>'),
+        ]);
+
+        $this->artisan('artikelen:ophalen')
+            ->expectsOutputToContain('Geen verbinding met Onbereikbaar')
+            ->expectsOutput('Fout bij ophalen bij Fout: 500')
+            ->assertSuccessful();
+
+        $this->assertSame(['Artikel van de werkende feed'], Artikel::pluck('titel')->all());
+    }
+
+    public function test_fetching_a_feed_trims_whitespace_around_the_title_of_the_article_and_event(): void
+    {
+        Http::preventStrayRequests();
+        config(['services.matcher.methode' => 'rake']);
+
+        $bron = Bron::create(['naam' => 'Testnieuws', 'orientatie' => 'neutral']);
+        $bron->feed_url = 'https://feeds.example.test/news.xml';
+        $bron->save();
+
+        $feed = '<?xml version="1.0"?><rss version="2.0"><channel><item>'
+            ."<title>\n  Senaat stemt over begroting \n</title>"
+            .'<link>https://news.example.test/begroting</link>'
+            .'<pubDate>Mon, 12 Oct 2026 08:00:00 GMT</pubDate>'
+            .'<description>De senaat stemt vandaag.</description>'
+            .'</item></channel></rss>';
+
+        Http::fake([
+            'https://feeds.example.test/news.xml' => Http::response($feed),
+        ]);
+
+        $this->artisan('artikelen:ophalen')->assertSuccessful();
+
+        $artikel = Artikel::where('url', 'https://news.example.test/begroting')->firstOrFail();
+        $this->assertSame('Senaat stemt over begroting', $artikel->titel);
+        $this->assertSame('Senaat stemt over begroting', $artikel->gebeurtenis->onderwerp);
+    }
+
+    public function test_fetching_a_feed_stores_the_publication_time_in_dutch_time(): void
+    {
+        Http::preventStrayRequests();
+        config(['services.matcher.methode' => 'rake']);
+
+        $bron = Bron::create(['naam' => 'Testnieuws', 'orientatie' => 'neutral']);
+        $bron->feed_url = 'https://feeds.example.test/news.xml';
+        $bron->save();
+
+        $bestaandArtikel = Artikel::create([
+            'titel' => 'Oud artikel zonder tijd',
+            'publicatiedatum' => '2026-10-11',
+            'volledige_tekst' => 'Tekst.',
+            'url' => 'https://news.example.test/oud',
+            'bron_id' => $bron->id,
+        ]);
+
+        $feed = <<<'XML'
+            <?xml version="1.0"?>
+            <rss version="2.0">
+                <channel>
+                    <item>
+                        <title>Nieuw artikel</title>
+                        <link>https://news.example.test/nieuw</link>
+                        <pubDate>Mon, 12 Oct 2026 08:15:00 GMT</pubDate>
+                        <description>Tekst.</description>
+                    </item>
+                    <item>
+                        <title>Oud artikel zonder tijd</title>
+                        <link>https://news.example.test/oud</link>
+                        <pubDate>Sun, 11 Oct 2026 21:30:00 +0000</pubDate>
+                        <description>Tekst.</description>
+                    </item>
+                </channel>
+            </rss>
+            XML;
+
+        Http::fake([
+            'https://feeds.example.test/news.xml' => Http::response($feed),
+        ]);
+
+        $this->artisan('artikelen:ophalen')->assertSuccessful();
+
+        $nieuwArtikel = Artikel::where('url', 'https://news.example.test/nieuw')->firstOrFail();
+        $this->assertSame('2026-10-12 10:15:00', $nieuwArtikel->publicatiedatum->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-10-11 23:30:00', $bestaandArtikel->fresh()->publicatiedatum->format('Y-m-d H:i:s'));
     }
 
     public function test_fetching_a_feed_links_differently_worded_articles_via_ollama_embeddings(): void

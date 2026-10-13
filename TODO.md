@@ -226,28 +226,29 @@ Alles wat nog open staat, gegroepeerd op soort. Open punten uit eerdere bouwblok
 ### Bouwblok 17: Nieuwe functionaliteiten en verbeteringen
 
 **Nieuwe functionaliteiten**
-- [ ] Blindspot-blok: gebeurtenissen die bijna alleen door links of alleen door rechts worden gebracht
-- [ ] Gerelateerde gebeurtenissen op de detailpagina: met de embeddings de 3 gebeurtenissen tonen die er het meest op lijken
-- [ ] Bronpagina: per bron het label, de laatste artikelen en hoe vaak die bron in gebeurtenissen voorkomt. De idiap-dataset heeft ook een kolom `factual_reporting` (high/mixed/low); die kan als "betrouwbaarheid" naast de politieke kleur
-- [ ] Gebeurtenis over meerdere dagen: nieuws dat doorloopt, valt nu uiteen in losse gebeurtenissen per dag. De vergelijking uitbreiden naar bijvoorbeeld 48 uur, of gebeurtenissen van opeenvolgende dagen als tijdlijn aan elkaar koppelen
+- [x] Blindspot-blok: gebeurtenissen die bijna alleen door links of alleen door rechts worden gebracht
+- [x] Gerelateerde gebeurtenissen op de detailpagina: met de embeddings de 3 gebeurtenissen tonen die er het meest op lijken
+- [x] Bronpagina: per bron het label, de laatste artikelen en hoe vaak die bron in gebeurtenissen voorkomt. De idiap-dataset heeft ook een kolom `factual_reporting` (high/mixed/low); die kan als "betrouwbaarheid" naast de politieke kleur
+- [x] Gebeurtenis over meerdere dagen: nieuws dat doorloopt, valt nu uiteen in losse gebeurtenissen per dag. De vergelijking uitbreiden naar bijvoorbeeld 48 uur, of gebeurtenissen van opeenvolgende dagen als tijdlijn aan elkaar koppelen
 
 **Groeperen en data**
-- [ ] Publicatietijd opslaan, niet alleen de datum (`publicatiedatum` is nu een `date`). Daarmee kan: "2 uur geleden" tonen; Hot echt op 48 uur zetten in plaats van "vandaag plus gisteren"; het middernachtprobleem bij het groeperen oplossen
-- [ ] Betere titel (`onderwerp`) voor een gebeurtenis: nu is dat de titel van het eerste artikel. Bijvoorbeeld met de embeddings de "meest centrale" titel kiezen (open sinds bouwblok 12)
-- [ ] Matcher: in code documenteren waarom 40 woorden, drempel 6, drempel 0,85 en de strikte same-day-regel (`$maxDagen = 0`) (open sinds bouwblok 12)
+- [x] Publicatietijd opslaan, niet alleen de datum (`publicatiedatum` is nu een `date`). Daarmee kan: "2 uur geleden" tonen; Hot echt op 48 uur zetten in plaats van "vandaag plus gisteren"; het middernachtprobleem bij het groeperen oplossen
+- [x] Betere titel (`onderwerp`) voor een gebeurtenis: nu is dat de titel van het eerste artikel. Bijvoorbeeld met de embeddings de "meest centrale" titel kiezen (open sinds bouwblok 12)
+- [ ] Matcher: in code documenteren waarom 40 woorden, drempel 6, drempel 0,85 en het venster van 48 uur (`$maxUren`, sinds bouwblok 17; daarvoor de same-day-regel) (open sinds bouwblok 12)
 - [ ] Oriëntatie van de 9 bronnen buiten de idiap-dataset met de hand nalopen op mediabiasfactcheck.com (open sinds bouwblok 15)
 
 **Website**
-- [ ] Omschrijving onder de artikeltitel op de detailpagina
-- [ ] Samenvatting: datum en model tonen
-- [ ] Externe links: artikellinks openen nu in hetzelfde tabblad
+- [x] Omschrijving onder de artikeltitel op de detailpagina
+- [x] Samenvatting: datum en model tonen
+- [x] Externe links: artikellinks openen nu in hetzelfde tabblad
+- [x] alleen preview laten zien bij de artikelen per perspectief bij show pagina. ook "Toon alles" knop aanmaken die alle artikelen toont binnen show pagina.
 
 **Cosmetisch**
-- [ ] Dark mode
+- [x] Dark mode
 
 **Techniek en onderhoud**
-- [ ] Feeds parallel ophalen (`Http::pool()`)
-- [ ] Scheduler: `artikelen:ophalen` en `samenvattingen:genereren` automatisch elk uur laten draaien via Laravel `Schedule` in `routes/console.php`
+- [x] Feeds parallel ophalen (`Http::pool()`)
+- [x] Scheduler: `artikelen:ophalen` en `samenvattingen:genereren` automatisch elk uur laten draaien via Laravel `Schedule` in `routes/console.php`
 - [ ] Latere pass gebruiken voor review van matcher-, controller- en summary-kwaliteit met AI-gestuurde feedbackloops (open sinds bouwblok 13)
 
 ### Later / optioneel

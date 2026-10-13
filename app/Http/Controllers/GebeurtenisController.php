@@ -4,12 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Categorie;
 use App\Models\Gebeurtenis;
+use App\Services\GebeurtenisMatcher;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class GebeurtenisController extends Controller
 {
     private int $aantalTrending = 3;
+
+    private int $aantalPreview = 3;
 
     /**
      * Lijst met alle gebeurtenissen, of alleen die van één onderwerp via /onderwerpen/{categorie}.
@@ -95,28 +99,12 @@ class GebeurtenisController extends Controller
     {
         $gebeurtenis->load('samenvatting', 'artikelen.bron');
 
-        $bakjes = [
-            'left' => 'Links',
-            'left-center' => 'Links',
-            'neutral' => 'Midden',
-            'right-center' => 'Rechts',
-            'right' => 'Rechts',
-        ];
-
         $artikelen = $gebeurtenis->artikelen ?? collect();
         $artikelen->each(function ($artikel): void {
             $artikel->setAttribute('bron_logo_url', $this->bronLogoUrl($artikel->url));
         });
 
-        $artikelenPerOrientatie = $artikelen->groupBy(function ($artikel) use ($bakjes) {
-            $orientatie = $artikel?->bron?->orientatie;
-
-            if ($orientatie === null || $orientatie === '') {
-                return 'Onbekend';
-            }
-
-            return $bakjes[$orientatie] ?? 'Onbekend';
-        });
+        $artikelenPerOrientatie = $artikelen->groupBy(fn ($artikel): string => $artikel->bron?->bakje() ?? 'Onbekend');
 
         $onbekendeArtikelen = $artikelenPerOrientatie->get('Onbekend', collect());
 
@@ -137,10 +125,24 @@ class GebeurtenisController extends Controller
             return $volgorde[$bakje] ?? 5;
         });
 
+        // Alle embeddings ophalen kost ~0,5 s, dus het resultaat blijft een uur bewaard
+        $gerelateerdeIds = Cache::remember(
+            "gebeurtenissen.{$gebeurtenis->id}.gerelateerd",
+            now()->addHour(),
+            fn (): array => (new GebeurtenisMatcher)->gerelateerdeGebeurtenissen($gebeurtenis),
+        );
+        $gerelateerd = Gebeurtenis::voorKaart()
+            ->whereKey($gerelateerdeIds)
+            ->get()
+            ->sortBy(fn (Gebeurtenis $gerelateerde): int => array_search($gerelateerde->id, $gerelateerdeIds, true))
+            ->values();
+
         return view('gebeurtenissen.show', [
             'gebeurtenis' => $gebeurtenis,
             'artikelenPerOrientatie' => $artikelenPerOrientatie,
             'onbekendeArtikelen' => $onbekendeArtikelen,
+            'gerelateerd' => $gerelateerd,
+            'aantalPreview' => $this->aantalPreview,
         ]);
     }
 

@@ -26,6 +26,11 @@
         op een links-rechts-as; hun label is een noodoplossing.
     </p>
     <p class="mt-2 leading-relaxed">
+        Dezelfde dataset geeft per bron ook een oordeel over feitelijke berichtgeving (high, mixed of low).
+        Op de <a href="{{ route('bronnen.index') }}" class="underline decoration-line underline-offset-4 hover:text-ink">bronpagina's</a>
+        staat dat als betrouwbaarheid Hoog, Gemengd of Laag. Ook dat geldt voor de hele bron, niet per artikel.
+    </p>
+    <p class="mt-2 leading-relaxed">
         De bakjes Links, Midden en Rechts op de detailpagina zijn alleen weergave.
         Left en left-center vallen onder Links, neutral onder Midden, right-center en right onder Rechts.
         In de database blijft de oorspronkelijke label staan. Die zie je onder de titel, bij de bronnaam.
@@ -33,7 +38,7 @@
 
     <h2 class="mt-8 text-xl font-semibold">Groepen zijn gelijkenis, geen waarheid</h2>
     <p class="mt-2 leading-relaxed">
-        Artikelen komen in één gebeurtenis als hun tekst genoeg op elkaar lijkt, binnen één kalenderdag.
+        Artikelen komen in één gebeurtenis als hun tekst genoeg op elkaar lijkt en ze binnen 48 uur van elkaar verschenen.
         Daarvoor zet een klein taalmodel (nomic-embed-text, lokaal via Ollama) de titel en het begin van
         de RSS-omschrijving om in een reeks getallen die de betekenis weergeeft. Een nieuw artikel komt bij
         de gebeurtenis van het artikel dat er het meest op lijkt, als die gelijkenis hoog genoeg is.
@@ -43,8 +48,14 @@
         Is dat model niet beschikbaar, dan valt MediaLens terug op gedeelde trefwoorden in de eerste 40 woorden
         van de omschrijving. Beide methodes zijn geen bewijs dat artikelen hetzelfde feit beschrijven,
         en al helemaal geen oordeel over wat waar is. Twee verschillende verhalen over hetzelfde onderwerp
-        kunnen in één groep belanden, en een artikel van vlak voor middernacht komt niet bij een artikel
-        van vlak erna.
+        kunnen in één groep belanden. Nieuws dat langer dan 48 uur doorloopt, valt uiteen in meerdere gebeurtenissen;
+        onder een gebeurtenis staan daarom gerelateerde gebeurtenissen die er inhoudelijk op lijken.
+    </p>
+    <p class="mt-2 leading-relaxed">
+        Het blok Blindspot op de homepage toont gebeurtenissen van de afgelopen week waarvan minstens 80% van de
+        linkse en rechtse artikelen van één kant komt. MediaLens volgt meer linkse dan rechtse bronnen, dus
+        "vooral links" komt vaker voor. Een blindspot zegt dus iets over de bronnen die MediaLens volgt,
+        niet over alle media.
     </p>
 
     <h2 class="mt-8 text-xl font-semibold">De samenvatting is geen neutrale scheidsrechter</h2>

@@ -151,8 +151,9 @@ class ArtikelVergelijker
         $gebeurtenis->update(['categorie' => $categorie]);
         unset($data['categorie']);
 
-        // Voeg de gebeurtenis_id toe aan de data
+        // Voeg de gebeurtenis_id en het gebruikte model toe aan de data
         $data['gebeurtenis_id'] = $gebeurtenis->id;
+        $data['model'] = config('services.litellm.model');
 
         // Update of create de samenvatting
         if ($samenvatting) {

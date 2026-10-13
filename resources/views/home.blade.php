@@ -19,12 +19,12 @@
         </div>
 
         @if ($hot->isEmpty())
-            <p class="rounded-lg border border-line bg-white px-5 py-8 text-center text-sm text-muted">Geen gebeurtenissen in de afgelopen 48 uur.</p>
+            <p class="rounded-lg border border-line bg-surface px-5 py-8 text-center text-sm text-muted">Geen gebeurtenissen in de afgelopen 48 uur.</p>
         @else
             <div class="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
                 @include('gebeurtenissen.partials.tegel', ['gebeurtenis' => $hot->first()])
                 @if ($hot->count() > 1)
-                    <div class="divide-y divide-line rounded-lg border border-line bg-white px-5">
+                    <div class="divide-y divide-line rounded-lg border border-line bg-surface px-5">
                         @foreach ($hot->skip(1) as $gebeurtenis)
                             @include('gebeurtenissen.partials.regel')
                         @endforeach
@@ -34,10 +34,35 @@
         @endif
     </section>
 
+    @if ($blindspots->flatten()->isNotEmpty())
+        <section aria-labelledby="blindspot-titel" class="mb-12">
+            <h2 id="blindspot-titel" class="text-xl font-semibold">Blindspot</h2>
+            <p class="mt-1 text-xs text-muted">Gebeurtenissen van de afgelopen 7 dagen die bijna alleen door één kant worden gebracht (minstens 80% van de linkse en rechtse artikelen)</p>
+            <div class="mt-4 grid gap-6 md:grid-cols-2">
+                @foreach (['links' => 'Vooral door links gebracht', 'rechts' => 'Vooral door rechts gebracht'] as $kant => $kop)
+                    <section aria-labelledby="blindspot-{{ $kant }}" class="min-w-0 rounded-lg border border-line bg-surface px-5 pt-4">
+                        <h3 id="blindspot-{{ $kant }}" class="flex items-center gap-2 font-semibold">
+                            <span class="h-2 w-2 rounded-full {{ $kant === 'links' ? 'bg-left' : 'bg-right' }}" aria-hidden="true"></span>{{ $kop }}
+                        </h3>
+                        @if ($blindspots[$kant]->isEmpty())
+                            <p class="py-4 text-sm text-muted">Geen gebeurtenissen.</p>
+                        @else
+                            <div class="divide-y divide-line">
+                                @foreach ($blindspots[$kant] as $gebeurtenis)
+                                    @include('gebeurtenissen.partials.regel')
+                                @endforeach
+                            </div>
+                        @endif
+                    </section>
+                @endforeach
+            </div>
+        </section>
+    @endif
+
     <div class="grid gap-10 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <div class="grid gap-8 md:grid-cols-2">
             @if ($perCategorie->isEmpty())
-                <p class="rounded-lg border border-line bg-white px-5 py-8 text-center text-sm text-muted md:col-span-2">Nog geen gebeurtenissen ingedeeld per onderwerp.</p>
+                <p class="rounded-lg border border-line bg-surface px-5 py-8 text-center text-sm text-muted md:col-span-2">Nog geen gebeurtenissen ingedeeld per onderwerp.</p>
             @endif
             @foreach ($perCategorie as $waarde => $gebeurtenissen)
                 @php($categorie = \App\Categorie::from($waarde))
@@ -55,7 +80,7 @@
             @endforeach
         </div>
 
-        <aside aria-labelledby="meeste-artikelen-titel" class="h-fit rounded-lg border border-line bg-white p-5">
+        <aside aria-labelledby="meeste-artikelen-titel" class="h-fit rounded-lg border border-line bg-surface p-5">
             <h2 id="meeste-artikelen-titel" class="text-lg font-semibold">Meeste artikelen</h2>
             <p class="mt-1 text-xs text-muted">Gebeurtenissen met de meeste berichtgeving</p>
             @if ($meesteArtikelen->isEmpty())

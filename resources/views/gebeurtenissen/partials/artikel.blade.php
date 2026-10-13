@@ -7,12 +7,21 @@
             @endif
         </span>
         <div class="min-w-0 flex-1">
-            <p class="truncate text-sm font-semibold">{{ $artikel->bron?->naam ?? 'Bron onbekend' }}</p>
+            <p class="truncate text-sm font-semibold">
+                @if ($artikel->bron)
+                    <a href="{{ route('bronnen.show', $artikel->bron) }}" class="hover:text-accent hover:underline">{{ $artikel->bron->naam }}</a>
+                @else
+                    Bron onbekend
+                @endif
+            </p>
             <p class="truncate text-xs text-muted">{{ $artikel->bron?->orientatie ?? 'Oriëntatie onbekend' }}</p>
         </div>
-        <time datetime="{{ $artikel->publicatiedatum }}" class="shrink-0 text-xs text-muted">{{ date('d-m-Y', strtotime($artikel->publicatiedatum)) }}</time>
+        @include('gebeurtenissen.partials.tijd', ['tijdstip' => $artikel->publicatiedatum, 'class' => 'shrink-0 text-xs text-muted'])
     </div>
     <h4 class="mt-3 font-semibold leading-snug">
-        <a href="{{ $artikel->url ?? '#' }}" class="underline decoration-line underline-offset-4 hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">{{ $artikel->titel }}</a>
+        <a href="{{ $artikel->url ?? '#' }}" target="_blank" rel="noopener noreferrer" class="underline decoration-line underline-offset-4 hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">{{ $artikel->titel }}<span class="sr-only"> (opent in een nieuw tabblad)</span></a>
     </h4>
+    @if (filled($artikel->volledige_tekst))
+        <p class="mt-2 text-sm leading-relaxed text-muted">{{ \Illuminate\Support\Str::limit($artikel->volledige_tekst, 200) }}</p>
+    @endif
 </article>

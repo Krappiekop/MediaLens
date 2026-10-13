@@ -6,6 +6,7 @@ use App\Models\Artikel;
 use App\Models\Gebeurtenis;
 use Carbon\Carbon;
 use DonatelloZa\RakePlus\RakePlus;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Log;
 
@@ -72,7 +73,7 @@ class GebeurtenisMatcher
 
     private int $minimaleOverlap = 6;   // <--- minimale hoeveelheid trefwoorden die in beide teksten moeten voorkomen om een match te hebben
 
-    private int $maxDagen = 0; // <--- alleen artikelen van dezelfde datum mogen aan dezelfde gebeurtenis worden gekoppeld
+    private int $maxUren = 48; // <--- alleen artikelen die binnen 48 uur van elkaar verschenen mogen aan dezelfde gebeurtenis worden gekoppeld
 
     private ?RakePlus $rake = null;
 
@@ -85,11 +86,14 @@ class GebeurtenisMatcher
             return 'overgeslagen';
         }
 
-        $zelfdeDatum = Carbon::parse($artikel->publicatiedatum)->toDateString();
+        $publicatie = Carbon::parse($artikel->publicatiedatum);
 
         $kandidaten = Artikel::where('id', '!=', $artikel->id)          // <--- artikel is niet zelf de kandidaat
             ->whereNotNull('gebeurtenis_id')                            // <--- artikel is gekoppeld aan een gebeurtenis
-            ->whereDate('publicatiedatum', $zelfdeDatum)                // <--- alleen artikelen van dezelfde dag mogen worden gekoppeld
+            ->whereBetween('publicatiedatum', [                         // <--- alleen artikelen binnen het venster, ook over middernacht heen
+                $publicatie->copy()->subHours($this->maxUren),
+                $publicatie->copy()->addHours($this->maxUren),
+            ])
             ->get();
 
         $besteKandidaat = $this->gebruiktEmbeddings($artikel)
@@ -100,6 +104,8 @@ class GebeurtenisMatcher
             $artikel->update([
                 'gebeurtenis_id' => $besteKandidaat->gebeurtenis_id, // <--- artikel gekoppeld aan gebeurtenis van de beste kandidaat
             ]);
+
+            $this->werkGebeurtenisBij($besteKandidaat->gebeurtenis); // <--- met een artikel erbij kan een andere titel centraler zijn
 
             return 'bestaand';
         }
@@ -112,7 +118,108 @@ class GebeurtenisMatcher
             'gebeurtenis_id' => $gebeurtenis->id, // <--- artikel gekoppeld aan gebeurtenis
         ]);
 
+        $this->werkGebeurtenisBij($gebeurtenis);
+
         return 'nieuw';
+    }
+
+    /**
+     * Werkt de afgeleide velden van een gebeurtenis bij nadat er een artikel bij is gekomen:
+     * de meest centrale titel en de gemiddelde embedding (voor gerelateerde gebeurtenissen).
+     */
+    public function werkGebeurtenisBij(Gebeurtenis $gebeurtenis): void
+    {
+        $artikelen = $gebeurtenis->artikelen()
+            ->whereNotNull('embedding')
+            ->orderBy('id')
+            ->get(['id', 'titel', 'embedding']);
+
+        if ($artikelen->isEmpty()) {
+            return;
+        }
+
+        $gebeurtenis->embedding = $this->gemiddeldeEmbedding($artikelen->pluck('embedding')->all());
+        $this->kiesCentraleTitel($gebeurtenis, $artikelen);
+        $gebeurtenis->save();
+    }
+
+    /**
+     * Gebeurtenissen die het meest lijken op deze, op basis van de gemiddelde embedding, mits boven de minimale similarity.
+     * De gebeurtenis zelf en gebeurtenissen met minder dan 2 artikelen tellen niet mee.
+     *
+     * @return list<int> ids, meest gelijkend eerst
+     */
+    public function gerelateerdeGebeurtenissen(Gebeurtenis $gebeurtenis, int $aantal = 3): array
+    {
+        if ($gebeurtenis->embedding === null) {
+            return [];
+        }
+
+        $minimaleSimilarity = (float) config('services.matcher.minimale_similarity_gerelateerd');
+        $scores = [];
+
+        foreach (Gebeurtenis::zichtbaar()->whereKeyNot($gebeurtenis->id)->whereNotNull('embedding')->get(['id', 'embedding']) as $ander) {
+            $similarity = $this->cosineSimilarity($gebeurtenis->embedding, $ander->embedding);
+
+            if ($similarity >= $minimaleSimilarity) {
+                $scores[$ander->id] = $similarity;
+            }
+        }
+
+        arsort($scores);
+
+        return array_slice(array_keys($scores), 0, $aantal);
+    }
+
+    /**
+     * @param  list<list<float>>  $embeddings
+     * @return list<float>
+     */
+    private function gemiddeldeEmbedding(array $embeddings): array
+    {
+        $som = array_fill(0, count($embeddings[0]), 0.0);
+
+        foreach ($embeddings as $embedding) {
+            foreach ($embedding as $index => $waarde) {
+                $som[$index] += $waarde;
+            }
+        }
+
+        return array_map(fn (float|int $waarde): float => $waarde / count($embeddings), $som);
+    }
+
+    /**
+     * Maakt de titel van het meest centrale artikel het onderwerp van de gebeurtenis: het artikel waarvan de embedding
+     * gemiddeld het meest lijkt op die van de andere artikelen. Bij gelijke score wint het oudste artikel.
+     * Met minder dan 2 embeddings is er niets te vergelijken en blijft het onderwerp staan.
+     *
+     * @param  Collection<int, Artikel>  $artikelen  artikelen met embedding, oudste eerst
+     */
+    private function kiesCentraleTitel(Gebeurtenis $gebeurtenis, Collection $artikelen): void
+    {
+        if ($artikelen->count() < 2) {
+            return;
+        }
+
+        $centraalsteArtikel = null;
+        $hoogsteScore = -INF;
+
+        foreach ($artikelen as $artikel) {
+            $score = 0.0;
+
+            foreach ($artikelen as $ander) {
+                if ($ander->id !== $artikel->id) {
+                    $score += $this->cosineSimilarity($artikel->embedding, $ander->embedding);
+                }
+            }
+
+            if ($score > $hoogsteScore) {
+                $centraalsteArtikel = $artikel;
+                $hoogsteScore = $score;
+            }
+        }
+
+        $gebeurtenis->onderwerp = $centraalsteArtikel->titel;
     }
 
     // embeddings gebruiken als dat is ingesteld én het artikel er een heeft (anders terugval op RAKE)

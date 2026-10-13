@@ -195,7 +195,36 @@ class ExampleTest extends TestCase
         (new ArtikelVergelijker)->slaOp($gebeurtenis);
     }
 
-    public function test_articles_are_only_matched_within_the_same_day(): void
+    public function test_articles_are_matched_across_midnight_within_48_hours(): void
+    {
+        $bron = Bron::create(['naam' => 'Bron voor middernacht', 'orientatie' => 'left-center']);
+        $gebeurtenis = Gebeurtenis::create(['onderwerp' => 'Begroting voor middernacht']);
+
+        Artikel::create([
+            'titel' => 'Beleid op begroting en verkiezingen',
+            'publicatiedatum' => '2026-10-10 23:30:00',
+            'volledige_tekst' => 'Regering noemt begroting een akkoord en verkiezingen volgen na overleg over de vakbonden.',
+            'url' => 'https://example.com/voor-middernacht',
+            'bron_id' => $bron->id,
+            'gebeurtenis_id' => $gebeurtenis->id,
+        ]);
+
+        $nieuwArtikel = Artikel::create([
+            'titel' => 'Begroting en verkiezingen na middernacht',
+            'publicatiedatum' => '2026-10-11 00:30:00',
+            'volledige_tekst' => 'Regering noemt begroting een akkoord en verkiezingen volgen na overleg over de vakbonden.',
+            'url' => 'https://example.com/na-middernacht',
+            'bron_id' => $bron->id,
+            'gebeurtenis_id' => null,
+        ]);
+
+        $resultaat = (new GebeurtenisMatcher)->koppel($nieuwArtikel);
+
+        $this->assertSame('bestaand', $resultaat);
+        $this->assertSame($gebeurtenis->id, $nieuwArtikel->fresh()->gebeurtenis_id);
+    }
+
+    public function test_articles_more_than_48_hours_apart_are_not_matched(): void
     {
         $bron = Bron::create([
             'naam' => 'Bron voor dagvergrendeling',
@@ -208,7 +237,7 @@ class ExampleTest extends TestCase
 
         $eersteArtikel = Artikel::create([
             'titel' => 'Beleid op begroting en verkiezingen',
-            'publicatiedatum' => '2026-10-10',
+            'publicatiedatum' => '2026-10-10 12:00:00',
             'volledige_tekst' => 'Regering noemt begroting een akkoord en verkiezingen volgen na overleg over de vakbonden.',
             'url' => 'https://example.com/volgende-dag-1',
             'bron_id' => $bron->id,
@@ -217,7 +246,7 @@ class ExampleTest extends TestCase
 
         $nieuwArtikel = Artikel::create([
             'titel' => 'Nieuwe groep over begroting en verkiezingen',
-            'publicatiedatum' => '2026-10-11',
+            'publicatiedatum' => '2026-10-12 12:01:00',
             'volledige_tekst' => 'Regering noemt begroting een akkoord en verkiezingen volgen na overleg over de vakbonden.',
             'url' => 'https://example.com/volgende-dag-2',
             'bron_id' => $bron->id,
@@ -306,6 +335,98 @@ class ExampleTest extends TestCase
 
         $this->assertSame('nieuw', $resultaat);
         $this->assertNotSame($andereGebeurtenis->id, $nieuwArtikel->fresh()->gebeurtenis_id);
+    }
+
+    public function test_matcher_maakt_de_meest_centrale_titel_het_onderwerp_als_er_een_artikel_bij_komt(): void
+    {
+        config(['services.matcher.methode' => 'embeddings', 'services.matcher.minimale_similarity' => 0.7]);
+
+        $bron = Bron::create(['naam' => 'Bron voor embeddings', 'orientatie' => 'center']);
+        $gebeurtenis = Gebeurtenis::create(['onderwerp' => 'Artikel rand']);
+
+        $this->artikelMetEmbedding($bron, 'rand', [1.0, 0.0, 0.0], $gebeurtenis->id);
+        $this->artikelMetEmbedding($bron, 'midden', [0.6, 0.8, 0.0], $gebeurtenis->id);
+        $nieuwArtikel = $this->artikelMetEmbedding($bron, 'nieuw', [0.0, 1.0, 0.0], null);
+
+        $resultaat = (new GebeurtenisMatcher)->koppel($nieuwArtikel);
+
+        $this->assertSame('bestaand', $resultaat);
+        $this->assertSame('Artikel midden', $gebeurtenis->fresh()->onderwerp);
+    }
+
+    public function test_matcher_houdt_de_eerste_titel_bij_twee_even_centrale_artikelen(): void
+    {
+        config(['services.matcher.methode' => 'embeddings', 'services.matcher.minimale_similarity' => 0.7]);
+
+        $bron = Bron::create(['naam' => 'Bron voor embeddings', 'orientatie' => 'center']);
+        $gebeurtenis = Gebeurtenis::create(['onderwerp' => 'Artikel eerste']);
+
+        $this->artikelMetEmbedding($bron, 'eerste', [1.0, 0.0, 0.0], $gebeurtenis->id);
+        $nieuwArtikel = $this->artikelMetEmbedding($bron, 'tweede', [0.9, 0.1, 0.0], null);
+
+        (new GebeurtenisMatcher)->koppel($nieuwArtikel);
+
+        $this->assertSame('Artikel eerste', $gebeurtenis->fresh()->onderwerp);
+    }
+
+    public function test_bijwerken_command_zet_centrale_titel_en_gemiddelde_embedding(): void
+    {
+        $bron = Bron::create(['naam' => 'Bron voor embeddings', 'orientatie' => 'center']);
+        $teVerbeteren = Gebeurtenis::create(['onderwerp' => 'Artikel rand']);
+        $alGoed = Gebeurtenis::create(['onderwerp' => 'Artikel goed']);
+
+        $this->artikelMetEmbedding($bron, 'rand', [1.0, 0.0, 0.0], $teVerbeteren->id);
+        $this->artikelMetEmbedding($bron, 'midden', [0.6, 0.8, 0.0], $teVerbeteren->id);
+        $this->artikelMetEmbedding($bron, 'buiten', [0.0, 1.0, 0.0], $teVerbeteren->id);
+        $this->artikelMetEmbedding($bron, 'goed', [1.0, 0.0, 0.0], $alGoed->id);
+        $this->artikelMetEmbedding($bron, 'ook-goed', [0.0, 0.0, 1.0], $alGoed->id);
+
+        $this->artisan('gebeurtenissen:bijwerken')
+            ->expectsOutput("{$teVerbeteren->id}: Artikel midden")
+            ->expectsOutput('2 gebeurtenissen bijgewerkt, 1 titels aangepast.')
+            ->assertSuccessful();
+
+        $this->assertSame('Artikel midden', $teVerbeteren->fresh()->onderwerp);
+        $this->assertSame('Artikel goed', $alGoed->fresh()->onderwerp);
+        $this->assertEqualsWithDelta([0.5, 0.0, 0.5], $alGoed->fresh()->embedding, 0.0001);
+    }
+
+    public function test_detailpagina_toont_alleen_gerelateerde_gebeurtenissen_boven_de_drempel_meest_gelijkend_eerst(): void
+    {
+        config(['services.matcher.minimale_similarity_gerelateerd' => 0.7]);
+
+        $bron = Bron::create(['naam' => 'Bron voor gerelateerd', 'orientatie' => 'neutral']);
+        $gebeurtenis = $this->gebeurtenisMetEmbedding($bron, 'Hoofdgebeurtenis', [1.0, 0.0, 0.0]);
+        $this->gebeurtenisMetEmbedding($bron, 'Redelijk gelijkend', [0.8, 0.6, 0.0]);
+        $this->gebeurtenisMetEmbedding($bron, 'Sterk gelijkend', [0.99, 0.1, 0.0]);
+        $this->gebeurtenisMetEmbedding($bron, 'Ander onderwerp', [0.0, 1.0, 0.0]);
+
+        $response = $this->get(route('gebeurtenissen.show', $gebeurtenis));
+
+        $response->assertOk()
+            ->assertSeeInOrder(['Gerelateerde gebeurtenissen', 'Sterk gelijkend', 'Redelijk gelijkend'])
+            ->assertDontSee('Ander onderwerp');
+    }
+
+    /**
+     * @param  list<float>  $embedding
+     */
+    private function gebeurtenisMetEmbedding(Bron $bron, string $onderwerp, array $embedding): Gebeurtenis
+    {
+        $gebeurtenis = Gebeurtenis::create(['onderwerp' => $onderwerp, 'embedding' => $embedding]);
+
+        foreach ([1, 2] as $nummer) {
+            Artikel::create([
+                'titel' => "{$onderwerp} {$nummer}",
+                'publicatiedatum' => '2026-10-10',
+                'volledige_tekst' => 'Tekst.',
+                'url' => "https://example.com/{$gebeurtenis->id}/{$nummer}",
+                'bron_id' => $bron->id,
+                'gebeurtenis_id' => $gebeurtenis->id,
+            ]);
+        }
+
+        return $gebeurtenis;
     }
 
     /**
