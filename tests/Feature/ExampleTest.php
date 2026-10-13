@@ -273,4 +273,54 @@ class ExampleTest extends TestCase
         $this->assertSame('bestaand', $resultaat);
         $this->assertSame($sterkeGebeurtenis->id, $nieuwArtikel->fresh()->gebeurtenis_id);
     }
+
+    public function test_matcher_koppelt_met_embeddings_aan_de_meest_gelijkende_kandidaat(): void
+    {
+        config(['services.matcher.methode' => 'embeddings', 'services.matcher.minimale_similarity' => 0.8]);
+
+        $bron = Bron::create(['naam' => 'Bron voor embeddings', 'orientatie' => 'center']);
+        $redelijkeGebeurtenis = Gebeurtenis::create(['onderwerp' => 'Redelijke match']);
+        $besteGebeurtenis = Gebeurtenis::create(['onderwerp' => 'Beste match']);
+
+        $this->artikelMetEmbedding($bron, 'redelijk', [0.8, 0.6, 0.0], $redelijkeGebeurtenis->id);
+        $this->artikelMetEmbedding($bron, 'beste', [0.99, 0.1, 0.0], $besteGebeurtenis->id);
+        $nieuwArtikel = $this->artikelMetEmbedding($bron, 'nieuw', [1.0, 0.0, 0.0], null);
+
+        $resultaat = (new GebeurtenisMatcher)->koppel($nieuwArtikel);
+
+        $this->assertSame('bestaand', $resultaat);
+        $this->assertSame($besteGebeurtenis->id, $nieuwArtikel->fresh()->gebeurtenis_id);
+    }
+
+    public function test_matcher_maakt_nieuwe_gebeurtenis_als_similarity_onder_de_drempel_ligt(): void
+    {
+        config(['services.matcher.methode' => 'embeddings', 'services.matcher.minimale_similarity' => 0.8]);
+
+        $bron = Bron::create(['naam' => 'Bron voor embeddings', 'orientatie' => 'center']);
+        $andereGebeurtenis = Gebeurtenis::create(['onderwerp' => 'Ander nieuws']);
+
+        $this->artikelMetEmbedding($bron, 'ander', [0.0, 1.0, 0.0], $andereGebeurtenis->id);
+        $nieuwArtikel = $this->artikelMetEmbedding($bron, 'nieuw', [1.0, 0.0, 0.0], null);
+
+        $resultaat = (new GebeurtenisMatcher)->koppel($nieuwArtikel);
+
+        $this->assertSame('nieuw', $resultaat);
+        $this->assertNotSame($andereGebeurtenis->id, $nieuwArtikel->fresh()->gebeurtenis_id);
+    }
+
+    /**
+     * @param  list<float>  $embedding
+     */
+    private function artikelMetEmbedding(Bron $bron, string $naam, array $embedding, ?int $gebeurtenisId): Artikel
+    {
+        return Artikel::create([
+            'titel' => "Artikel {$naam}",
+            'publicatiedatum' => '2026-10-10',
+            'volledige_tekst' => 'Tekst zonder gedeelde trefwoorden.',
+            'url' => "https://example.com/embedding-{$naam}",
+            'bron_id' => $bron->id,
+            'gebeurtenis_id' => $gebeurtenisId,
+            'embedding' => $embedding,
+        ]);
+    }
 }

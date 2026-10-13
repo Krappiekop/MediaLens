@@ -257,7 +257,8 @@ The Nation stond eerder op die onbruikbaar-lijst (layout-HTML plus “appeared f
 - Overlapdrempel is 6 trefwoorden (`$minimaleOverlap` in `GebeurtenisMatcher`). Het match-venster is nu strikter: alleen artikelen met dezelfde kalenderdatum mogen worden gekoppeld (`whereDate('publicatiedatum', $zelfdeDatum)`). Met de eigen lijst stond de drempel op 7 en het venster op 3. Na RAKE koppelde 7 te weinig, 5 te los; 6 is de huidige knop. De wissel naar “zelfde datum” voorkomt cross-day matchen bij een nieuwe gebeurtenis op de volgende dag. Of de groepen hetzelfde feit zijn, is nog steeds een steekproef in phpMyAdmin of de browser, geen gegeven.
 - `RakePlus::create()` laadt `en_US` bij elke aanroep. Zonder hergebruik wordt `artikelen:ophalen` traag. De matcher houdt één `$rake`: eerste tekst `create()`, daarna `extract()`. Het command maakt die matcher één keer vóór de loop.
 - `extract()` op dezelfde tekst blijft duur als `koppel()` elke kandidaat opnieuw door RAKE haalt. `$trefwoordCache` slaat de trefwoorden per artikel-id op (`trefwoordenVan()`). Het nieuwe artikel gaat één keer door RAKE, elke kandidaat hoogstens één keer in de hele command. `overlap()` en `zelfdeGebeurtenis()` gaan om de cache heen (Tinker met losse strings).
-- Trefwoordmatching blijft simpel: de eerste kandidaat die de drempel haalt wint. Ketting-matching kan nog. Voorbeeld van vóór de knip van 40 woorden: Trump/Iran-stukken plus Guardian First Thing plus SCMP-Hongkong in één groep. Voorbeeld daarna: Guardian-AU-stukken via de gedeelde promo in de eerste 40 woorden (8 trefwoorden, toen drempel 7). Die promo's (`Get our …` en `Listen to the podcast …`) gaan er bij het ophalen af als HTML-`<li>` vóór tag-strip; bestaande `volledige_tekst` blijft vies tot je die rijen bijwerkt en opnieuw koppelt.
+- Sinds bouwblok 16 groepeert de matcher standaard met embeddings (`MATCHER_METHODE=embeddings`): Ollama met `nomic-embed-text`, cosine similarity in PHP, drempel 0,85 (`MATCHER_MINIMALE_SIMILARITY`). RAKE blijft als terugval voor artikelen zonder embedding (Ollama uit) of met `MATCHER_METHODE=rake`. De bullets hierboven over 40 woorden, drempel 6 en de RAKE-cache gelden alleen voor die RAKE-route. Embeddings zien synoniemen wel, maar brede onderwerpen (Trump/Oekraïne) kunnen boven de drempel samenvallen.
+- Bij beide methodes wint sinds bouwblok 16 de kandidaat met de hoogste score (meeste trefwoorden of hoogste similarity), niet meer de eerste die de drempel haalt. Ketting-matching kan nog. Voorbeeld van vóór de knip van 40 woorden: Trump/Iran-stukken plus Guardian First Thing plus SCMP-Hongkong in één groep. Voorbeeld daarna: Guardian-AU-stukken via de gedeelde promo in de eerste 40 woorden (8 trefwoorden, toen drempel 7). Die promo's (`Get our …` en `Listen to the podcast …`) gaan er bij het ophalen af als HTML-`<li>` vóór tag-strip; bestaande `volledige_tekst` blijft vies tot je die rijen bijwerkt en opnieuw koppelt.
 - Artikelen worden alleen bij het ophalen of bij een handmatige `koppel()`-run gematcht. Na een wijziging in de matcher: samenvattingen weg (foreign key), `gebeurtenis_id` leegmaken, `gebeurtenissen` legen, opnieuw koppelen. Of `migrate:fresh --seed` plus `artikelen:ophalen`.
 
 ### Oriëntatie
@@ -503,10 +504,25 @@ The Nation stond eerder op die onbruikbaar-lijst (layout-HTML plus “appeared f
 - [ ] Atom-feeds ondersteunen (`$xml->entry`), zodat Vox, The Atlantic en Jacobin erbij kunnen
 - [ ] `artikelen:ophalen` draaien met alle 124 bronnen en een steekproef van `volledige_tekst` en de groepen in phpMyAdmin bekijken
 
+### Bouwblok 16: Groeperen met embeddings (Ollama)
+- [x] RAKE-matcher kiest de kandidaat met de meeste overlap in plaats van de eerste die de drempel haalt
+- [x] Ollama lokaal gebruikt met het model `nomic-embed-text` (768 getallen per tekst); geen VS Code-extensie, de Ollama-app draait op `http://localhost:11434`
+- [x] Service `Ollama` die een batch teksten naar `/api/embed` stuurt, met duidelijke fouten bij ontbrekende config of een lege respons
+- [x] Kolom `embedding` (JSON) op `artikelen`; MySQL blijft, cosine similarity wordt in PHP berekend
+- [x] Embedding-tekst: `clustering: ` + titel + eerste 100 woorden van `volledige_tekst`
+- [x] `GebeurtenisMatcher` koppelt aan de kandidaat met de hoogste similarity boven `MATCHER_MINIMALE_SIMILARITY`; zelfde-dag-regel blijft
+- [x] Methode instelbaar via `MATCHER_METHODE` (`embeddings` of `rake`); zonder embedding (Ollama uit) valt de matcher terug op RAKE
+- [x] `artikelen:ophalen` maakt per bron één batch embeddings en koppelt daarna
+- [x] Command `artikelen:embeddings` voor bestaande artikelen zonder embedding; 4.206 artikelen in 9 min 42 s (±140 ms per artikel)
+- [x] Drempel afgestemd op echte data: 0,85. Daarboven vooral dezelfde gebeurtenis die RAKE miste, tussen 0,80 en 0,85 vooral hetzelfde onderwerp met een ander verhaal
+- [x] Tests: beste kandidaat wint, nieuwe gebeurtenis onder de drempel, embeddings via de feed opgeslagen, terugval op RAKE als Ollama onbereikbaar is
+- [ ] Bestaande gebeurtenissen opnieuw koppelen met embeddings en de groepen vergelijken met de RAKE-groepen
+- [ ] Controleren of brede onderwerpen (Trump/Oekraïne) niet te veel samenvallen; anders drempel verhogen of tijdvenster aanpassen
+
 ### Later / optioneel
 - [ ] Scheduler: `artikelen:ophalen` + `samenvattingen:genereren` via Laravel `Schedule`
 - [ ] Framing-analyse uit bouwblok 4 als apart veld opslaan en tonen (`vergelijk()` is uitgecommentarieerd; deel van die vraag zit nu in overeenstemming/verschil van `samenvat()`)
 - [ ] Feature-tests voor `index` / `show`
-- [ ] Embeddings + vectorsimilariteit i.p.v. trefwoordoverlap (casus noemt dit als mogelijke clustering)
+- [x] Embeddings + vectorsimilariteit i.p.v. trefwoordoverlap (casus noemt dit als mogelijke clustering). Zie bouwblok 16
 - [ ] Volledige artikeltekst via web scraping of een nieuws-API i.p.v. de RSS-omschrijving in `volledige_tekst`
 - [ ] Oriëntatie per artikel via AI / tekstclassificatie i.p.v. alleen het MBFC-label per bron

@@ -49,4 +49,14 @@ return [
             : 1,
     ],
 
+    'ollama' => [
+        'base_url' => env('OLLAMA_BASE_URL', 'http://localhost:11434'),
+        'embedding_model' => env('OLLAMA_EMBEDDING_MODEL', 'nomic-embed-text'),
+    ],
+
+    'matcher' => [
+        'methode' => env('MATCHER_METHODE', 'embeddings'),
+        'minimale_similarity' => (float) env('MATCHER_MINIMALE_SIMILARITY', 0.85),
+    ],
+
 ];

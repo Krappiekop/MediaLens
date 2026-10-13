@@ -18,7 +18,15 @@ class Artikel extends Model
         'afbeelding_credit',
         'bron_id',
         'gebeurtenis_id',
+        'embedding',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'embedding' => 'array',
+        ];
+    }
 
     public function bron(): BelongsTo
     {

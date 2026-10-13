@@ -50,9 +50,7 @@ class ArtikelenOphalen extends Command
                 continue;
             }
 
-            $opgehaald = 0;
-            $nieuw = 0;
-            $bestaand = 0;
+            $nieuweArtikelen = [];
 
             foreach ($xml->channel->item as $item) {
                 $titel = (string) $item->title; // titel van het artikel
@@ -97,7 +95,7 @@ class ArtikelenOphalen extends Command
                     continue;
                 }
 
-                $artikel = Artikel::create([ // maak een nieuw artikel aan
+                $nieuweArtikelen[] = Artikel::create([ // maak een nieuw artikel aan
                     'titel' => $titel,
                     'publicatiedatum' => $publicatiedatum,
                     'volledige_tekst' => $tekst,
@@ -106,6 +104,18 @@ class ArtikelenOphalen extends Command
                     'afbeelding_credit' => $afbeelding['credit'],
                     'bron_id' => $bron->id,
                 ]);
+            }
+
+            // embeddings voor alle nieuwe artikelen van deze bron in één aanroep naar Ollama
+            if (config('services.matcher.methode') === 'embeddings') {
+                $matcher->maakEmbeddings($nieuweArtikelen);
+            }
+
+            $opgehaald = 0;
+            $nieuw = 0;
+            $bestaand = 0;
+
+            foreach ($nieuweArtikelen as $artikel) {
                 $resultaat = $matcher->koppel($artikel);
 
                 $opgehaald++;

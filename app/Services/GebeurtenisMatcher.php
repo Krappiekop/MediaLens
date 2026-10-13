@@ -6,9 +6,53 @@ use App\Models\Artikel;
 use App\Models\Gebeurtenis;
 use Carbon\Carbon;
 use DonatelloZa\RakePlus\RakePlus;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\Log;
 
 class GebeurtenisMatcher
 {
+    public function __construct(private Ollama $ollama = new Ollama) {}
+
+    /**
+     * Maakt in batches embeddings voor artikelen die er nog geen hebben.
+     * Lukt dat niet (bijv. Ollama staat uit), dan blijft de embedding leeg en valt koppel() terug op RAKE.
+     *
+     * @param  iterable<Artikel>  $artikelen
+     * @return int aantal artikelen dat een embedding heeft gekregen
+     */
+    public function maakEmbeddings(iterable $artikelen): int
+    {
+        $zonderEmbedding = collect($artikelen)->filter(fn (Artikel $artikel) => $artikel->embedding === null);
+        $aantal = 0;
+
+        foreach ($zonderEmbedding->chunk(50) as $batch) {
+            try {
+                $embeddings = $this->ollama->embeddings($batch->map(fn (Artikel $artikel) => $this->embeddingTekst($artikel))->values()->all());
+            } catch (ConnectionException|\RuntimeException $e) {
+                Log::warning('embeddings maken mislukt, terugval op RAKE', ['fout' => $e->getMessage()]);
+
+                return $aantal;
+            }
+
+            foreach ($batch->values() as $index => $artikel) {
+                $artikel->update(['embedding' => $embeddings[$index]]);
+                $aantal++;
+            }
+        }
+
+        return $aantal;
+    }
+
+    // tekst die naar het embedding-model gaat: titel + begin van het artikel
+    private function embeddingTekst(Artikel $artikel): string
+    {
+        $tekst = trim(strip_tags((string) $artikel->volledige_tekst));
+        $woorden = preg_split('/\s+/', $tekst, -1, PREG_SPLIT_NO_EMPTY);
+
+        // "clustering: " vertelt nomic-embed-text dat de vectoren bedoeld zijn om gelijke teksten te groeperen
+        return trim('clustering: '.$artikel->titel.' '.implode(' ', array_slice($woorden, 0, 100)));
+    }
+
     private function vergelijkTekst(Artikel $artikel): string
     {
         // tekst van het artikel
@@ -48,6 +92,68 @@ class GebeurtenisMatcher
             ->whereDate('publicatiedatum', $zelfdeDatum)                // <--- alleen artikelen van dezelfde dag mogen worden gekoppeld
             ->get();
 
+        $besteKandidaat = $this->gebruiktEmbeddings($artikel)
+            ? $this->besteKandidaatOpEmbedding($artikel, $kandidaten)
+            : $this->besteKandidaatOpTrefwoorden($artikel, $kandidaten);
+
+        if ($besteKandidaat !== null) {
+            $artikel->update([
+                'gebeurtenis_id' => $besteKandidaat->gebeurtenis_id, // <--- artikel gekoppeld aan gebeurtenis van de beste kandidaat
+            ]);
+
+            return 'bestaand';
+        }
+
+        $gebeurtenis = Gebeurtenis::create([
+            'onderwerp' => $artikel->titel, // <--- nieuwe gebeurtenis aangemaakt met de titel van het artikel
+        ]);
+
+        $artikel->update([
+            'gebeurtenis_id' => $gebeurtenis->id, // <--- artikel gekoppeld aan gebeurtenis
+        ]);
+
+        return 'nieuw';
+    }
+
+    // embeddings gebruiken als dat is ingesteld én het artikel er een heeft (anders terugval op RAKE)
+    private function gebruiktEmbeddings(Artikel $artikel): bool
+    {
+        return config('services.matcher.methode') === 'embeddings' && $artikel->embedding !== null;
+    }
+
+    /**
+     * Kandidaat waarvan de embedding het meest lijkt op die van het artikel, mits boven de minimale similarity.
+     *
+     * @param  iterable<Artikel>  $kandidaten
+     */
+    private function besteKandidaatOpEmbedding(Artikel $artikel, iterable $kandidaten): ?Artikel
+    {
+        $besteKandidaat = null;
+        $hoogsteSimilarity = (float) config('services.matcher.minimale_similarity');
+
+        foreach ($kandidaten as $kandidaat) {
+            if ($kandidaat->embedding === null) {
+                continue;
+            }
+
+            $similarity = $this->cosineSimilarity($artikel->embedding, $kandidaat->embedding);
+
+            if ($similarity >= $hoogsteSimilarity) { // <--- onthoud de kandidaat met de hoogste similarity
+                $besteKandidaat = $kandidaat;
+                $hoogsteSimilarity = $similarity;
+            }
+        }
+
+        return $besteKandidaat;
+    }
+
+    /**
+     * Kandidaat met de meeste gedeelde RAKE-trefwoorden, mits minimaal $minimaleOverlap.
+     *
+     * @param  iterable<Artikel>  $kandidaten
+     */
+    private function besteKandidaatOpTrefwoorden(Artikel $artikel, iterable $kandidaten): ?Artikel
+    {
         $woordenNieuw = $this->trefwoordenVan($artikel);
 
         $besteKandidaat = null;
@@ -63,23 +169,32 @@ class GebeurtenisMatcher
             }
         }
 
-        if ($besteKandidaat !== null) {
-            $artikel->update([
-                'gebeurtenis_id' => $besteKandidaat->gebeurtenis_id, // <--- artikel gekoppeld aan gebeurtenis met de meeste overlap
-            ]);
+        return $besteKandidaat;
+    }
 
-            return 'bestaand';
+    /**
+     * Cosine similarity tussen twee vectoren: 1 = zelfde betekenis, 0 = niets met elkaar te maken.
+     *
+     * @param  list<float>  $a
+     * @param  list<float>  $b
+     */
+    private function cosineSimilarity(array $a, array $b): float
+    {
+        $inproduct = 0.0;
+        $lengteA = 0.0;
+        $lengteB = 0.0;
+
+        foreach ($a as $index => $waarde) {
+            $inproduct += $waarde * $b[$index];
+            $lengteA += $waarde * $waarde;
+            $lengteB += $b[$index] * $b[$index];
         }
 
-        $gebeurtenis = Gebeurtenis::create([
-            'onderwerp' => $artikel->titel, // <--- nieuwe gebeurtenis aangemaakt met de titel van het artikel
-        ]);
+        if ($lengteA == 0.0 || $lengteB == 0.0) {
+            return 0.0;
+        }
 
-        $artikel->update([
-            'gebeurtenis_id' => $gebeurtenis->id, // <--- artikel gekoppeld aan gebeurtenis
-        ]);
-
-        return 'nieuw';
+        return $inproduct / (sqrt($lengteA) * sqrt($lengteB));
     }
 
     // trefwoorden uit de titel halen
