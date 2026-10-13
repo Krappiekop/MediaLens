@@ -27,22 +27,6 @@ class ArtikelVergelijker
         return implode("\n\n", $regels);
     }
 
-    // prompt voor de ai om artikelen binnen een gebeurtenis te vergelijken
-    // public function vergelijk(Gebeurtenis $gebeurtenis): string
-    // {
-    //     $artikelen = $this->artikelenTekst($gebeurtenis);
-
-    //     $prompt = "Hieronder staan nieuwsartikelen over dezelfde gebeurtenis, uit bronnen met verschillende politieke oriëntatie.\n\n"
-    //         . "Vergelijk de artikelen. Benoem:\n"
-    //         . "- taalgebruik (neutraal, emotioneel, beladen woorden)\n"
-    //         . "- welke onderwerpen extra worden benadrukt\n"
-    //         . "- welke actoren (personen, instanties) worden genoemd of weggelaten\n\n"
-    //         . "Artikelen:\n\n"
-    //         . $artikelen;
-
-    //     return (new LiteLlm)->vraag($prompt, null, null, $gebeurtenis->id);
-    // }
-
     public function samenvat(Gebeurtenis $gebeurtenis): array
     {
 
