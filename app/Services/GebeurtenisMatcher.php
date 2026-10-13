@@ -1,15 +1,14 @@
 <?php
+
 namespace App\Services;
 
-use Carbon\Carbon;
 use App\Models\Artikel;
 use App\Models\Gebeurtenis;
+use Carbon\Carbon;
 use DonatelloZa\RakePlus\RakePlus;
 
 class GebeurtenisMatcher
 {
-
-
     private function vergelijkTekst(Artikel $artikel): string
     {
         // tekst van het artikel
@@ -28,8 +27,11 @@ class GebeurtenisMatcher
     }
 
     private int $minimaleOverlap = 6;   // <--- minimale hoeveelheid trefwoorden die in beide teksten moeten voorkomen om een match te hebben
+
     private int $maxDagen = 0; // <--- alleen artikelen van dezelfde datum mogen aan dezelfde gebeurtenis worden gekoppeld
+
     private ?RakePlus $rake = null;
+
     private array $trefwoordCache = [];
 
     // koppel de artikel aan een gebeurtenis
@@ -48,15 +50,25 @@ class GebeurtenisMatcher
 
         $woordenNieuw = $this->trefwoordenVan($artikel);
 
+        $besteKandidaat = null;
+        $hoogsteOverlap = 0;
+
         foreach ($kandidaten as $kandidaat) {
             $woordenKandidaat = $this->trefwoordenVan($kandidaat);
+            $overlap = count(array_intersect($woordenNieuw, $woordenKandidaat)); // <--- vergelijk de tekst van het artikel en de kandidaat
 
-            if (count(array_intersect($woordenNieuw, $woordenKandidaat)) >= $this->minimaleOverlap) { // <--- vergelijk de tekst van het artikel en de kandidaat
-                $artikel->update([
-                    'gebeurtenis_id' => $kandidaat->gebeurtenis_id, // <--- artikel gekoppeld aan gebeurtenis
-                ]);
-                return 'bestaand';
+            if ($overlap >= $this->minimaleOverlap && $overlap > $hoogsteOverlap) { // <--- onthoud de kandidaat met de meeste overlap
+                $besteKandidaat = $kandidaat;
+                $hoogsteOverlap = $overlap;
             }
+        }
+
+        if ($besteKandidaat !== null) {
+            $artikel->update([
+                'gebeurtenis_id' => $besteKandidaat->gebeurtenis_id, // <--- artikel gekoppeld aan gebeurtenis met de meeste overlap
+            ]);
+
+            return 'bestaand';
         }
 
         $gebeurtenis = Gebeurtenis::create([
@@ -69,7 +81,6 @@ class GebeurtenisMatcher
 
         return 'nieuw';
     }
-
 
     // trefwoorden uit de titel halen
     public function trefwoorden(string $titel): array
@@ -89,7 +100,7 @@ class GebeurtenisMatcher
     {
         $id = $artikel->id;
 
-        if (!isset($this->trefwoordCache[$id])) {
+        if (! isset($this->trefwoordCache[$id])) {
             $this->trefwoordCache[$id] = $this->trefwoorden($this->vergelijkTekst($artikel));
         }
 

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Artikel;
 use App\Models\Bron;
 use App\Models\Gebeurtenis;
+use App\Services\ArtikelVergelijker;
 use App\Services\GebeurtenisMatcher;
 use App\Services\LiteLlm;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -96,7 +97,7 @@ class ExampleTest extends TestCase
             'onderwerp' => 'Gebeurtenis zonder artikelen',
         ]);
 
-        $response = $this->get('/gebeurtenissen/' . $gebeurtenis->id);
+        $response = $this->get('/gebeurtenissen/'.$gebeurtenis->id);
 
         $response->assertOk();
         $response->assertSee('Gebeurtenis zonder artikelen');
@@ -191,7 +192,7 @@ class ExampleTest extends TestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Ongeldige JSON van het model');
 
-        (new \App\Services\ArtikelVergelijker())->slaOp($gebeurtenis);
+        (new ArtikelVergelijker)->slaOp($gebeurtenis);
     }
 
     public function test_articles_are_only_matched_within_the_same_day(): void
@@ -223,10 +224,53 @@ class ExampleTest extends TestCase
             'gebeurtenis_id' => null,
         ]);
 
-        $resultaat = (new GebeurtenisMatcher())->koppel($nieuwArtikel);
+        $resultaat = (new GebeurtenisMatcher)->koppel($nieuwArtikel);
 
         $this->assertSame('nieuw', $resultaat);
         $this->assertNotNull($nieuwArtikel->fresh()->gebeurtenis_id);
         $this->assertNotSame($gebeurtenis->id, $nieuwArtikel->fresh()->gebeurtenis_id);
+    }
+
+    public function test_matcher_koppelt_aan_de_kandidaat_met_de_meeste_overlap(): void
+    {
+        $bron = Bron::create([
+            'naam' => 'Bron voor beste match',
+            'orientatie' => 'center',
+        ]);
+
+        $zwakkeGebeurtenis = Gebeurtenis::create(['onderwerp' => 'Zwakke match']);
+        $sterkeGebeurtenis = Gebeurtenis::create(['onderwerp' => 'Sterke match']);
+
+        Artikel::create([
+            'titel' => 'Zwakke kandidaat',
+            'publicatiedatum' => '2026-10-10',
+            'volledige_tekst' => 'alpha, bravo, charlie, delta, echo, foxtrot, kilo, lima.',
+            'url' => 'https://example.com/zwakke-kandidaat',
+            'bron_id' => $bron->id,
+            'gebeurtenis_id' => $zwakkeGebeurtenis->id,
+        ]);
+
+        Artikel::create([
+            'titel' => 'Sterke kandidaat',
+            'publicatiedatum' => '2026-10-10',
+            'volledige_tekst' => 'alpha, bravo, charlie, delta, echo, foxtrot, golf, hotel.',
+            'url' => 'https://example.com/sterke-kandidaat',
+            'bron_id' => $bron->id,
+            'gebeurtenis_id' => $sterkeGebeurtenis->id,
+        ]);
+
+        $nieuwArtikel = Artikel::create([
+            'titel' => 'Nieuw artikel',
+            'publicatiedatum' => '2026-10-10',
+            'volledige_tekst' => 'alpha, bravo, charlie, delta, echo, foxtrot, golf, hotel.',
+            'url' => 'https://example.com/nieuw-artikel',
+            'bron_id' => $bron->id,
+            'gebeurtenis_id' => null,
+        ]);
+
+        $resultaat = (new GebeurtenisMatcher)->koppel($nieuwArtikel);
+
+        $this->assertSame('bestaand', $resultaat);
+        $this->assertSame($sterkeGebeurtenis->id, $nieuwArtikel->fresh()->gebeurtenis_id);
     }
 }
