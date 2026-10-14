@@ -14,7 +14,7 @@
                     Bron onbekend
                 @endif
             </p>
-            <p class="truncate text-xs text-muted">{{ $artikel->bron?->orientatie ?? 'Oriëntatie onbekend' }}</p>
+            <p class="truncate text-xs text-muted">{{ $artikel->bron?->orientatie ? 'MBFC: '.$artikel->bron->orientatie : 'Oriëntatie onbekend' }}</p>
         </div>
         @include('gebeurtenissen.partials.tijd', ['tijdstip' => $artikel->publicatiedatum, 'class' => 'shrink-0 text-xs text-muted'])
     </div>
@@ -24,4 +24,5 @@
     @if (filled($artikel->volledige_tekst))
         <p class="mt-2 text-sm leading-relaxed text-muted">{{ \Illuminate\Support\Str::limit($artikel->volledige_tekst, 200) }}</p>
     @endif
+    @include('gebeurtenissen.partials.ai-orientatie')
 </article>

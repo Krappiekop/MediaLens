@@ -52,6 +52,7 @@ class BronController extends Controller
 
         return view('bronnen.show', [
             'bron' => $bron,
+            'aiSchatting' => $bron->aiSchatting(),
             'aantalArtikelen' => $bron->artikelen()->count(),
             'aantalGebeurtenissen' => $aantalGebeurtenissen,
             'laatsteArtikelen' => $laatsteArtikelen,

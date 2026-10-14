@@ -50,6 +50,19 @@ class Artikel extends Model
         return in_array($schema, ['http', 'https'], true) ? $url : null;
     }
 
+    /**
+     * Weergavegroep van de AI-schatting: Links, Midden, Rechts, Geen lading, of null als er nog geen schatting is.
+     * Schattingen van vóór de kolom ai_politiek (null) tellen als politiek geladen.
+     */
+    public function aiBakje(): ?string
+    {
+        if ($this->ai_orientatie === null) {
+            return null;
+        }
+
+        return $this->ai_politiek === false ? 'Geen lading' : Bron::bakjeVan($this->ai_orientatie);
+    }
+
     public function bron(): BelongsTo
     {
         return $this->belongsTo(Bron::class);

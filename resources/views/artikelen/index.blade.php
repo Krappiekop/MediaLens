@@ -58,7 +58,7 @@
                             <span>Bron onbekend</span>
                         @endif
                         <span aria-hidden="true">·</span>
-                        <span>{{ $artikel->bron?->orientatie ?? 'Oriëntatie onbekend' }}</span>
+                        <span>{{ $artikel->bron?->orientatie ? 'MBFC: '.$artikel->bron->orientatie : 'Oriëntatie onbekend' }}</span>
                         <span aria-hidden="true">·</span>
                         @include('gebeurtenissen.partials.tijd', ['tijdstip' => $artikel->publicatiedatum])
                     </div>
@@ -66,6 +66,7 @@
                         @include('gebeurtenissen.partials.artikellink')
                     </h2>
                     <p class="mt-3 text-sm leading-relaxed text-muted">{{ \Illuminate\Support\Str::limit($artikel->volledige_tekst, 220) }}</p>
+                    @include('gebeurtenissen.partials.ai-orientatie')
                     @if ($artikel->gebeurtenis)
                         <a href="{{ route('gebeurtenissen.show', $artikel->gebeurtenis) }}" class="mt-4 inline-block text-sm text-muted underline decoration-line underline-offset-4 hover:text-ink">Gebeurtenis: {{ $artikel->gebeurtenis->onderwerp }}</a>
                     @else

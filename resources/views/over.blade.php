@@ -36,6 +36,24 @@
         In de database blijft de oorspronkelijke label staan. Die zie je onder de titel, bij de bronnaam.
     </p>
 
+    <h2 class="mt-8 text-xl font-semibold">AI-schatting per artikel, als toets</h2>
+    <p class="mt-2 leading-relaxed">
+        Naast het MBFC-label laat MediaLens een taalmodel (hetzelfde DeepSeek-model als bij de samenvatting)
+        de oriëntatie van losse artikelen schatten. Het model krijgt alleen de titel en de tekst, niet de bronnaam
+        of het MBFC-label, zodat het dat label niet kan overnemen. Het beoordeelt woordkeuze, beladen termen en
+        welke standpunten ruimte krijgen, en geeft een zekerheid van 0 tot 100% met een korte onderbouwing.
+    </p>
+    <p class="mt-2 leading-relaxed">
+        Artikelen zonder politieke lading, zoals sport of bedrijfsnieuws, krijgen "geen politieke lading" en tellen
+        niet mee voor de bron. Bij een tekst korter dan 300 tekens is de zekerheid hooguit 40%. Op de bronpagina staat
+        het gemiddelde van de politiek geladen artikelen, gewogen naar zekerheid, naast het MBFC-label.
+    </p>
+    <p class="mt-2 leading-relaxed">
+        Die schatting is een toets, geen vervanging. MBFC beoordeelt een hele redactie, ook welke onderwerpen die kiest;
+        het model ziet alleen de korte RSS-tekst van één artikel. Daardoor komt het vaak uit op neutral.
+        Een verschil tussen de twee zegt dus net zo veel over de meetmethode als over de bron.
+    </p>
+
     <h2 class="mt-8 text-xl font-semibold">Groepen zijn gelijkenis, geen waarheid</h2>
     <p class="mt-2 leading-relaxed">
         Artikelen komen in één gebeurtenis als hun tekst genoeg op elkaar lijkt en ze binnen 48 uur van elkaar verschenen.

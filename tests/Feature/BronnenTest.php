@@ -118,7 +118,59 @@ class BronnenTest extends TestCase
             ->assertDontSee('data-toon-alles', false);
     }
 
-    private function artikel(Bron $bron, Gebeurtenis $gebeurtenis, string $titel, string $tijdstip): Artikel
+    public function test_source_page_shows_ai_estimate_weighted_by_certainty_without_articles_lacking_political_charge(): void
+    {
+        $bron = Bron::create(['naam' => 'Testkrant', 'orientatie' => 'right']);
+        $gebeurtenis = Gebeurtenis::create(['onderwerp' => 'Gebeurtenis']);
+        $this->artikel($bron, $gebeurtenis, 'Links artikel', '2026-10-10 09:00:00', ['ai_orientatie' => 'left', 'ai_politiek' => true, 'ai_zekerheid' => 60]);
+        $this->artikel($bron, $gebeurtenis, 'Neutraal artikel', '2026-10-10 10:00:00', ['ai_orientatie' => 'neutral', 'ai_politiek' => true, 'ai_zekerheid' => 40]);
+        $this->artikel($bron, $gebeurtenis, 'Sportartikel', '2026-10-10 11:00:00', ['ai_orientatie' => 'right', 'ai_politiek' => false, 'ai_zekerheid' => 90]);
+        $this->artikel($bron, $gebeurtenis, 'Niet geschat', '2026-10-10 12:00:00');
+
+        $this->get(route('bronnen.show', $bron))
+            ->assertOk()
+            ->assertSeeInOrder([
+                'Politiek label (MBFC)', 'Rechts', 'right',
+                'AI-schatting', 'Links', 'left-center · score -1,2', '2 politieke artikelen, gem. zekerheid 50%', 'Wijkt af van MBFC',
+            ]);
+    }
+
+    public function test_source_page_without_estimated_political_articles_shows_no_ai_estimate_yet(): void
+    {
+        $bron = Bron::create(['naam' => 'Testkrant', 'orientatie' => 'neutral']);
+        $gebeurtenis = Gebeurtenis::create(['onderwerp' => 'Gebeurtenis']);
+        $this->artikel($bron, $gebeurtenis, 'Sportartikel', '2026-10-10 11:00:00', ['ai_orientatie' => 'neutral', 'ai_politiek' => false, 'ai_zekerheid' => 30]);
+
+        $this->get(route('bronnen.show', $bron))
+            ->assertOk()
+            ->assertSeeInOrder(['AI-schatting', 'Nog geen'])
+            ->assertDontSee('Wijkt af van MBFC');
+    }
+
+    public function test_event_detail_shows_the_ai_estimate_per_article_next_to_the_mbfc_label(): void
+    {
+        $bron = Bron::create(['naam' => 'Testkrant', 'orientatie' => 'right-center']);
+        $gebeurtenis = Gebeurtenis::create(['onderwerp' => 'Gebeurtenis']);
+        $this->artikel($bron, $gebeurtenis, 'Geschat artikel', '2026-10-10 09:00:00', [
+            'ai_orientatie' => 'left-center', 'ai_politiek' => true, 'ai_zekerheid' => 65, 'ai_onderbouwing' => 'Citeert alleen de oppositie.',
+        ]);
+        $this->artikel($bron, $gebeurtenis, 'Sportartikel', '2026-10-10 10:00:00', [
+            'ai_orientatie' => 'neutral', 'ai_politiek' => false, 'ai_zekerheid' => 30, 'ai_onderbouwing' => 'Wedstrijdverslag.',
+        ]);
+        $this->artikel($bron, $gebeurtenis, 'Niet geschat artikel', '2026-10-10 08:00:00');
+
+        $response = $this->get(route('gebeurtenissen.show', $gebeurtenis));
+
+        $response->assertOk()
+            ->assertSee('MBFC: right-center')
+            ->assertSeeInOrder(['Sportartikel', 'AI: geen politieke lading · zekerheid 30%', 'Geschat artikel', 'AI: left-center · zekerheid 65%', 'Citeert alleen de oppositie.', 'Niet geschat artikel']);
+        $this->assertSame(2, substr_count($response->getContent(), 'AI: '));
+    }
+
+    /**
+     * @param  array<string, mixed>  $extra
+     */
+    private function artikel(Bron $bron, Gebeurtenis $gebeurtenis, string $titel, string $tijdstip, array $extra = []): Artikel
     {
         return Artikel::create([
             'titel' => $titel,
@@ -127,6 +179,7 @@ class BronnenTest extends TestCase
             'url' => "https://example.test/{$titel}",
             'bron_id' => $bron->id,
             'gebeurtenis_id' => $gebeurtenis->id,
+            ...$extra,
         ]);
     }
 }
