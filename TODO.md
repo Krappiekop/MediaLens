@@ -10,7 +10,7 @@ Voortgang van MediaLens, per fase en per bouwblok. Bouwblokken houden hun oorspr
 | [Fase 3: AI-analyse en samenvatting](#fase-3-ai-analyse-en-samenvatting) | 4, 5 | Klaar |
 | [Fase 4: Website](#fase-4-website) | 6, 7, 8, 9, 10, 14 | Klaar |
 | [Fase 5: Transparantie en kwaliteit](#fase-5-transparantie-en-kwaliteit) | 11, 13 | Klaar |
-| [Fase 6: Volgende stappen](#fase-6-volgende-stappen) | 17 | Open |
+| [Fase 6: Volgende stappen](#fase-6-volgende-stappen) | 17, 18 | Open |
 
 ## Basisopzet
 - [x] Laravel geïnstalleerd en lokaal draaiend
@@ -253,11 +253,59 @@ Alles wat nog open staat, gegroepeerd op soort. Open punten uit eerdere bouwblok
 
 ### Later / optioneel
 - [ ] Volledige artikeltekst via web scraping of een nieuws-API i.p.v. de RSS-omschrijving in `volledige_tekst`
-- [ ] Oriëntatie per artikel via AI / tekstclassificatie i.p.v. alleen het MBFC-label per bron
+- [x] Oriëntatie per artikel via AI naast het MBFC-label per bron (bouwblok 18)
+- [x] GitFlow installeren (bouwblok 18)
+- [x] GitFlow aparte feature branch (bouwblok 18)
+- [ ] Bias door DeepSeek-model (eerste aanwijzing in bouwblok 18: meer artikelen links dan rechts geschat)
+- [ ] Whimsical-account maken voor overdraagbaarheid (bouwblok 18, stap 4)
 
+### Bouwblok 18: Feedback verwerken: Git-flow, AI-oriëntatie en analyse
+Feedback van 14-10-2026:
+1. Git-flow inlezen en toepassen op de repo
+2. Feature branch aanmaken voor AI-gebaseerde oriëntatie
+3. AI de oriëntatie van bron en/of artikel laten schatten (met zekerheid), NAAST de huidige MBFC-oriëntatie, ter toetsing
+4. Analyse van de applicatie en documentatie opstellen. Leerdoelen: AI de analyse laten doen, MCP toepassen (Whimsical) voor schermflow, wireframes en systeemdocumentatie (hoe MediaLens werkt)
 
-- [ ] GitFlow installeren 
-- [ ] Gitflow aparte feature branch
-- [ ] Bias door Deepseek model
+**Stand van zaken (14-10-2026, einde dag)**
+- Werk staat op branch `feature/ai-orientatie`, gepusht naar GitHub. Nog niet gemerged naar `develop`
+- Database-dump met de 614 schattingen staat in Google Drive (`medialens-dump.zip`, met `LEESMIJ.txt` voor het importeren op de laptop)
 
-- [ ] whimsical account maken voor overdraagbaarheid
+**Git-flow (klaar)**
+- [x] Git for Windows 2.55 heeft geen `git flow` meer; `git-flow-next` geïnstalleerd met `winget install GitTower.GitFlowNext`
+- [x] `git flow init --preset=classic --defaults`: `main` (releases), `develop` (integratie), prefixes `feature/`, `bugfix/`, `release/`, `hotfix/`. `develop` gepusht naar GitHub
+- [x] `git flow feature start ai-orientatie`
+- [x] `git flow bugfix start test-datums`: `ArticleImagesTest` faalde omdat de vaste datum buiten het Hot-venster van 48 uur viel; opgelost met `travelTo()`. `bugfix finish` naar `develop`
+- [x] `git flow feature update`: feature gerebased op de nieuwe `develop`, daarna `git push --force-with-lease` (nodig omdat een rebase de commits herschrijft)
+
+**AI-oriëntatie (grotendeels klaar)**
+- [x] Kolommen op `artikelen`: `ai_orientatie` (de 5 MBFC-labels), `ai_politiek` (bool), `ai_zekerheid` (0–100), `ai_onderbouwing`, `ai_model`, `ai_geschat_op`
+- [x] Service `OrientatieSchatter`: stuurt alleen titel en tekst, bewust níet de bronnaam of het MBFC-label (anders neemt het model het label over). `json_schema` met validatie, zoals `ArtikelVergelijker`
+- [x] Command `artikelen:orientatie-schatten {--bron=} {--limit=20} {--opnieuw}`, nieuwste artikelen eerst, 3 pogingen per artikel
+- [x] Na de eerste 5 schattingen bijgestuurd: sport- en bedrijfsnieuws kreeg `neutral` met 90% zekerheid en zou elke bron naar het midden trekken. Daarom veld `politiek_geladen`; zonder lading telt een artikel niet mee voor de bron. Zekerheid gaat over de richting en is in de code begrensd op 40% bij geen lading of minder dan 300 tekens
+- [x] Bronpagina: kaart "AI-schatting" naast "Politiek label (MBFC)": gewogen gemiddelde (left = -2 … right = +2, gewogen naar zekerheid) van de politiek geladen artikelen, met "Wijkt af van MBFC"
+- [x] Artikelkaarten (detailpagina, `/artikelen`, bronpagina): `MBFC: <label>` bij de bron en een uitklapbaar label "AI: <label> · zekerheid X%" met de onderbouwing
+- [x] `/over`: blok "AI-schatting per artikel, als toets", met de beperking dat het model alleen de korte RSS-tekst ziet
+- [x] Tests: `OrientatieSchatterTest`, `ArtikelenOrientatieSchattenTest`, uitbreiding van `BronnenTest`. 74 tests groen
+- [x] Bug gevonden: `ai_zekerheid` is in MySQL unsigned, en unsigned keer een negatieve score loopt over. De tests (SQLite) zagen dat niet. Opgelost door het wegen in PHP te doen. Les: tests draaien op een andere database dan de app
+- [x] Steekproef: 614 artikelen geschat (run na ±500 gestopt, ±7,5 s per artikel, ±$0,00016 per artikel)
+- [ ] **3d: command `orientatie:vergelijken`**: per bron MBFC naast de AI-schatting; overeenstemming per bakje, confusion matrix (MBFC Links/Midden/Rechts tegen AI), grootste afwijkingen. Alleen uit de database, geen AI-calls
+- [ ] Eventueel de 5 oude schattingen (van vóór `ai_politiek`) opnieuw schatten
+- [ ] Feature afronden: `git flow feature finish ai-orientatie`, `develop` pushen
+- [ ] Notitie bouwblok 18 schrijven in `notities/Fase 6 - Volgende stappen/` (Git-flow-stappen, waarom rebase + force-with-lease, de bijsturing van de prompt, de MySQL/SQLite-bug)
+
+**Eerste uitkomsten steekproef (voor de analyse)**
+- 614 geschat: 393 politiek geladen, 216 zonder lading, 5 oud. 73 van de 124 bronnen; bronnen die veel publiceren zijn oververtegenwoordigd, omdat de nieuwste artikelen eerst gingen
+- Politiek geladen: left 25, left-center 91, neutral 225, right-center 27, right 25. Gemiddelde zekerheid 51%
+- 57% komt uit op neutral: waarschijnlijk omdat de RSS-tekst meestal alleen de feitelijke eerste alinea is. MBFC beoordeelt een hele redactie, ook de keuze van onderwerpen
+- Scheef naar links (116 tegen 52): komt deels doordat MediaLens meer linkse bronnen volgt, deels mogelijk door bias van het model. `orientatie:vergelijken` per MBFC-groep moet dat uit elkaar halen
+- Voorbeelden: The Guardian komt overeen met MBFC; The Sun wijkt af door één foute schatting (kritiek op Labour-politicus Burnham werd left-center)
+
+**Stap 4: analyse en documentatie (nog te doen)**
+- [ ] Whimsical-account maken en Whimsical als MCP-server koppelen in Claude Code (`claude mcp add`, controleren met `/mcp`)
+- [ ] Claude de codebase laten analyseren (pipeline, datamodel, routes, AI-componenten); uitkomst kritisch nalopen en noteren wat de AI goed en fout deed
+- [ ] Schermflow in Whimsical: home → gebeurtenis-detail → artikel → bronpagina, plus `/over`, onderwerpen, `/artikelen` en filters
+- [ ] Wireframes van de belangrijkste schermen, inclusief de AI-oriëntatie
+- [ ] Systeemdocumentatie in Whimsical: pipeline (ophalen → embeddings → groeperen → samenvatten → oriëntatie schatten), scheduler, ERD, externe diensten (LiteLLM/DeepSeek, Ollama)
+- [ ] Analysedocument met links naar de Whimsical-borden: doel en doelgroep, functionele beschrijving, technische werking, de oriëntatietoets (methode, uitkomst `orientatie:vergelijken`, conclusie), beperkingen en vervolgstappen
+- [ ] Werken op een eigen branch: `git flow feature start documentatie`
+- [ ] Na afronding: release via `git flow release start <versie>` en `finish`, zodat alles op `main` komt
