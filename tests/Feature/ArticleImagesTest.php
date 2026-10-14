@@ -64,6 +64,7 @@ class ArticleImagesTest extends TestCase
 
     public function test_homepage_and_detail_page_render_image_cards_and_fallbacks(): void
     {
+        $this->travelTo('2026-10-12 18:00:00');
         $linkerBron = Bron::create(['naam' => 'Bron Links', 'orientatie' => 'left']);
         $rechterBron = Bron::create(['naam' => 'Bron Rechts', 'orientatie' => 'right']);
         $gebeurtenis = Gebeurtenis::create(['onderwerp' => 'Nieuwe plannen voor de stad']);
