@@ -20,6 +20,7 @@ class Artikel extends Model
         'gebeurtenis_id',
         'embedding',
         'ai_orientatie',
+        'ai_politiek',
         'ai_zekerheid',
         'ai_onderbouwing',
         'ai_model',
@@ -31,6 +32,7 @@ class Artikel extends Model
         return [
             'publicatiedatum' => 'datetime',
             'embedding' => 'array',
+            'ai_politiek' => 'boolean',
             'ai_zekerheid' => 'integer',
             'ai_geschat_op' => 'datetime',
         ];

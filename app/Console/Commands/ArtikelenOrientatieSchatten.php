@@ -52,7 +52,8 @@ class ArtikelenOrientatieSchatten extends Command
             for ($poging = 1; $poging <= 3; $poging++) {
                 try {
                     $schatter->slaOp($artikel);
-                    $this->info("{$artikel->id}: {$artikel->ai_orientatie} ({$artikel->ai_zekerheid}%) {$artikel->titel}");
+                    $label = $artikel->ai_politiek ? $artikel->ai_orientatie : 'geen politieke lading';
+                    $this->info("{$artikel->id}: {$label} ({$artikel->ai_zekerheid}%) {$artikel->titel}");
                     $gelukt = true;
                     break;
 

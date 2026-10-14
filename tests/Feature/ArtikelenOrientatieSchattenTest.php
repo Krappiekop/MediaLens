@@ -22,13 +22,24 @@ class ArtikelenOrientatieSchattenTest extends TestCase
         Http::fake(['*' => $this->aiResponse('left')]);
 
         $this->artisan('artikelen:orientatie-schatten', ['--limit' => 1])
-            ->expectsOutput("{$nieuwste->id}: left (70%) Nieuwste")
+            ->expectsOutput("{$nieuwste->id}: left (40%) Nieuwste")
             ->assertSuccessful();
 
         $this->assertSame('left', $nieuwste->fresh()->ai_orientatie);
         $this->assertNull($ouder->fresh()->ai_orientatie);
         $this->assertSame('right', $alGeschat->fresh()->ai_orientatie);
         Http::assertSentCount(1);
+    }
+
+    public function test_output_says_when_an_article_has_no_political_charge(): void
+    {
+        $bron = Bron::create(['naam' => 'Testbron', 'orientatie' => 'neutral']);
+        $artikel = $this->artikel($bron, 'Wedstrijdverslag', '2026-10-13');
+        Http::fake(['*' => $this->aiResponse('neutral', false)]);
+
+        $this->artisan('artikelen:orientatie-schatten')
+            ->expectsOutput("{$artikel->id}: geen politieke lading (40%) Wedstrijdverslag")
+            ->assertSuccessful();
     }
 
     public function test_bron_option_limits_the_estimate_to_that_source(): void
@@ -85,10 +96,11 @@ class ArtikelenOrientatieSchattenTest extends TestCase
         ]);
     }
 
-    private function aiResponse(string $orientatie): PromiseInterface
+    private function aiResponse(string $orientatie, bool $politiekGeladen = true): PromiseInterface
     {
         return Http::response([
             'choices' => [['message' => ['content' => json_encode([
+                'politiek_geladen' => $politiekGeladen,
                 'orientatie' => $orientatie,
                 'zekerheid' => 70,
                 'onderbouwing' => 'Zakelijke toon.',
