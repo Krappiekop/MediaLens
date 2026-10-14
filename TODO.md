@@ -254,3 +254,10 @@ Alles wat nog open staat, gegroepeerd op soort. Open punten uit eerdere bouwblok
 ### Later / optioneel
 - [ ] Volledige artikeltekst via web scraping of een nieuws-API i.p.v. de RSS-omschrijving in `volledige_tekst`
 - [ ] Oriëntatie per artikel via AI / tekstclassificatie i.p.v. alleen het MBFC-label per bron
+
+
+- [ ] GitFlow installeren 
+- [ ] Gitflow aparte feature branch
+- [ ] Bias door Deepseek model
+
+- [ ] whimsical account maken voor overdraagbaarheid
