@@ -288,7 +288,7 @@ Feedback van 14-10-2026:
 - [x] Tests: `OrientatieSchatterTest`, `ArtikelenOrientatieSchattenTest`, uitbreiding van `BronnenTest`. 74 tests groen
 - [x] Bug gevonden: `ai_zekerheid` is in MySQL unsigned, en unsigned keer een negatieve score loopt over. De tests (SQLite) zagen dat niet. Opgelost door het wegen in PHP te doen. Les: tests draaien op een andere database dan de app
 - [x] Steekproef: 614 artikelen geschat (run na ±500 gestopt, ±7,5 s per artikel, ±$0,00016 per artikel)
-- [ ] **3d: command `orientatie:vergelijken`**: per bron MBFC naast de AI-schatting; overeenstemming per bakje, confusion matrix (MBFC Links/Midden/Rechts tegen AI), grootste afwijkingen. Alleen uit de database, geen AI-calls
+- [x] **3d: command `orientatie:vergelijken {--min=1}`**: per bron MBFC naast de AI-schatting (grootste afwijking eerst), overeenstemming per MBFC-bakje en een confusion matrix per artikel (MBFC-bakje van de bron tegen AI-bakje van het artikel). Alleen uit de database, geen AI-calls. Tests in `OrientatieVergelijkenTest`, 77 tests groen
 - [ ] Eventueel de 5 oude schattingen (van vóór `ai_politiek`) opnieuw schatten
 - [ ] Feature afronden: `git flow feature finish ai-orientatie`, `develop` pushen
 - [ ] Notitie bouwblok 18 schrijven in `notities/Fase 6 - Volgende stappen/` (Git-flow-stappen, waarom rebase + force-with-lease, de bijsturing van de prompt, de MySQL/SQLite-bug)
@@ -298,6 +298,8 @@ Feedback van 14-10-2026:
 - Politiek geladen: left 25, left-center 91, neutral 225, right-center 27, right 25. Gemiddelde zekerheid 51%
 - 57% komt uit op neutral: waarschijnlijk omdat de RSS-tekst meestal alleen de feitelijke eerste alinea is. MBFC beoordeelt een hele redactie, ook de keuze van onderwerpen
 - Scheef naar links (116 tegen 52): komt deels doordat MediaLens meer linkse bronnen volgt, deels mogelijk door bias van het model. `orientatie:vergelijken` per MBFC-groep moet dat uit elkaar halen
+- Uitkomst `orientatie:vergelijken` (68 bronnen): zelfde bakje bij 47% van de bronnen; Midden 80%, Rechts 47%, Links 38%. Gemiddelde afwijking Links +0,9, Rechts -1,2: het model trekt beide kanten naar het midden, rechts iets sterker
+- Confusion matrix per artikel: van de politiek geladen artikelen van MBFC-rechtse bronnen schat de AI 16 links (13%), bij MBFC-linkse bronnen maar 6 rechts (3%). De scheefheid 116 tegen 52 komt vooral door de bronnenmix (350 artikelen van linkse tegen 202 van rechtse bronnen), met daarbovenop een lichte trek naar links
 - Voorbeelden: The Guardian komt overeen met MBFC; The Sun wijkt af door één foute schatting (kritiek op Labour-politicus Burnham werd left-center)
 
 **Stap 4: analyse en documentatie (nog te doen)**
