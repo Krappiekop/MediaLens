@@ -42,8 +42,17 @@ return [
         'price_input' => (float) env('LITELLM_PRICE_INPUT', 0),
         'price_output' => (float) env('LITELLM_PRICE_OUTPUT', 0),
         'price_cached' => (float) env('LITELLM_PRICE_CACHED', 0),
-        'thinking_type' => env('LITELLM_THINKING_TYPE') ?: 'enabled',
-        'reasoning_effort' => env('LITELLM_REASONING_EFFORT') ?: 'high',
+        /*
+         * Denkstappen per soort aanroep, als OpenRouter-parameter `reasoning`:
+         * leeg = standaard van de provider, `uit` = niet denken, anders de effort (minimal, low, medium, high).
+         * De DeepSeek-parameters `thinking` en `reasoning_effort` kwamen via OpenRouter niet aan (bouwblok 19).
+         */
+        'reasoning' => [
+            'standaard' => (string) env('LITELLM_REASONING_EFFORT', ''),
+            'samenvatting' => (string) env('LITELLM_REASONING_SAMENVATTING', env('LITELLM_REASONING_EFFORT', '')),
+            'categorie' => (string) env('LITELLM_REASONING_CATEGORIE', env('LITELLM_REASONING_EFFORT', '')),
+            'orientatie' => (string) env('LITELLM_REASONING_ORIENTATIE', env('LITELLM_REASONING_EFFORT', '')),
+        ],
         'temperature' => is_numeric(env('LITELLM_TEMPERATURE'))
             ? (float) env('LITELLM_TEMPERATURE')
             : 1,

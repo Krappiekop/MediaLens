@@ -10,9 +10,13 @@ class ArtikelVergelijker
 {
     private int $minimaleArtikelen = 2;
 
+    /**
+     * Oudste artikel eerst, op id. Een nieuw artikel komt zo achteraan, en het hele eerdere stuk van de prompt
+     * blijft gelijk: bij de volgende samenvatting kan dat uit de cache van de provider komen.
+     */
     public function artikelenTekst(Gebeurtenis $gebeurtenis): string
     {
-        $gebeurtenis->load('artikelen.bron');
+        $gebeurtenis->load(['artikelen' => fn ($query) => $query->orderBy('id'), 'artikelen.bron']);
 
         $regels = [];
 
@@ -71,7 +75,7 @@ class ArtikelVergelijker
                     'additionalProperties' => false,
                 ],
             ],
-        ], $gebeurtenis->id);
+        ], $gebeurtenis->id, 'samenvatting');
 
         // Controleer of het antwoord een geldige JSON is
         $data = json_decode($antwoord, true);
@@ -103,7 +107,7 @@ class ArtikelVergelijker
                     'additionalProperties' => false,
                 ],
             ],
-        ], $gebeurtenis->id);
+        ], $gebeurtenis->id, 'categorie');
 
         $data = json_decode($antwoord, true);
         $categorie = Categorie::tryFrom(is_array($data) && is_string($data['categorie'] ?? null) ? $data['categorie'] : '');

@@ -110,7 +110,9 @@ Alle instellingen staan in `.env`; de standaardwaarden staan in `.env.example`.
 
 | Variabele | Standaard | Betekenis |
 |---|---|---|
-| `LITELLM_BASE_URL`, `LITELLM_API_KEY`, `LITELLM_MODEL` | Educom-proxy, DeepSeek | Taalmodel voor samenvattingen |
+| `LITELLM_BASE_URL`, `LITELLM_API_KEY`, `LITELLM_MODEL` | Educom-proxy, DeepSeek | Taalmodel voor samenvattingen, onderwerpen en de oriëntatieschatting |
+| `LITELLM_REASONING_EFFORT` | leeg | Hoeveel het model nadenkt: leeg = standaard van de provider, `uit`, of `minimal`, `low`, `medium`, `high`. Per soort aanroep te overschrijven met `LITELLM_REASONING_SAMENVATTING`, `_CATEGORIE` en `_ORIENTATIE` |
+| `LITELLM_PRICE_INPUT`, `_OUTPUT`, `_CACHED` | DeepSeek-prijzen | Prijs per miljoen tokens, voor de kostenschatting in de log als OpenRouter zelf geen kosten meestuurt |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Adres van de lokale Ollama-server |
 | `OLLAMA_EMBEDDING_MODEL` | `nomic-embed-text` | Model voor embeddings |
 | `MATCHER_METHODE` | `embeddings` | `embeddings` of `rake` (alleen trefwoorden) |
@@ -119,13 +121,15 @@ Alle instellingen staan in `.env`; de standaardwaarden staan in `.env.example`.
 
 Na een wijziging in `.env`: `php artisan config:clear`.
 
+Elke AI-aanroep staat als `llm usage` in `storage/logs/laravel.log`: soort aanroep, provider, duur, tokens (ook uit de cache en voor het nadenken) en kosten.
+
 ## Tests
 
 ```bash
 php artisan test
 ```
 
-De tests draaien op een SQLite-database in het geheugen. Feeds, Ollama en de AI worden nagebootst met `Http::fake()`, dus er is geen internet, Ollama of API-key nodig.
+De tests draaien op een SQLite-database in het geheugen. Feeds, Ollama en de AI worden nagebootst met `Http::fake()`, dus er is geen internet, Ollama of API-key nodig. De tests schrijven niet in de log (`LOG_CHANNEL=null`).
 
 Let op: de app zelf draait op MySQL. Wat in SQLite slaagt, kan in MySQL anders uitpakken (bijvoorbeeld rekenen met een `unsigned` kolom). Controleer database-werk daarom ook op de echte data.
 

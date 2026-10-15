@@ -64,7 +64,7 @@ class OrientatieSchatter
                     'additionalProperties' => false,
                 ],
             ],
-        ], $artikel->gebeurtenis_id);
+        ], $artikel->gebeurtenis_id, 'orientatie');
 
         $data = json_decode($antwoord, true);
 

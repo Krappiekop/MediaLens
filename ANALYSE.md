@@ -173,14 +173,13 @@ Deze bevindingen komen uit een analyse van de code door Claude (AI), met de cijf
 | S2 | De dubbelcheck `Artikel::where('url', $url)` draait per feed-item, maar `url` (tot 2048 tekens) heeft geen index | Elke run ±3.000 keer de hele tabel doorzoeken; wordt trager naarmate de database groeit | Kolom met een hash van de URL, met een unieke index | |
 | S3 | `publicatiedatum` heeft geen index, terwijl het matchvenster, Hot, de blindspot en alle lijsten erop filteren of sorteren | Zelfde: trager bij groei | Index op `publicatiedatum` | |
 | S4 | De gebeurtenispagina laadt alle kolommen van elk artikel, ook de embedding (768 getallen als JSON) | Bij 124 artikelen worden 124 vectoren uit MySQL gehaald die de pagina niet gebruikt. In notitie 17 bleek dat transport het dure deel | Kolommen selecteren zonder `embedding`, zoals `voorKaart()` al doet | |
-
 ### Code
 
 | # | Bevinding | Gevolg | Mogelijke oplossing | Nagelopen |
 |---|---|---|---|---|
 | C1 | De koppeling Links / Midden / Rechts ↔ MBFC-labels staat op **4 plekken**: `Bron::bakjeVan()`, `Gebeurtenis::scopeVoorKaart()`, `ArtikelController` en `GebeurtenisController` | Een wijziging in de indeling moet op 4 plekken tegelijk, anders tellen kaarten en filters anders dan de kolommen | Eén methode die per bakje de labels geeft, en die overal gebruiken | |
 | C2 | Niet overal return types: `GebeurtenisController`, `HomeController`, `OverController`, de relaties op de modellen, `SamenvattingenGenereren::handle()` | Ongelijk aan de rest van de code en aan de projectregels | Return types toevoegen | |
-| C3 | In `LiteLlm::vraag()` is `$systeem !== null` altijd waar (het is een `string`), wordt de URL en key opnieuw uit `config()` gelezen in plaats van de gecontroleerde variabelen, en wordt `$errorBody` niet gebruikt | Geen fout, wel verwarrend | Opruimen | |
+| C3 | In `LiteLlm::vraag()` is `$systeem !== null` altijd waar (het is een `string`), wordt de URL en key opnieuw uit `config()` gelezen in plaats van de gecontroleerde variabelen, en wordt `$errorBody` niet gebruikt | Geen fout, wel verwarrend | Opruimen. Gedaan in bouwblok 19, bij het herschrijven van `LiteLlm` | |
 | C4 | `resources/views/welcome.blade.php` (standaard van Laravel) verwijst naar de routes `login` en `register`, die niet bestaan. Ook het model `User` en de tabel `users` worden niet gebruikt | Dode code; de view crasht als iemand hem ooit gebruikt | Verwijderen | |
 
 ## 6. Beperkingen en vervolgstappen

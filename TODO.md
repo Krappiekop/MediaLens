@@ -10,7 +10,7 @@ Voortgang van MediaLens, per fase en per bouwblok. Bouwblokken houden hun oorspr
 | [Fase 3: AI-analyse en samenvatting](#fase-3-ai-analyse-en-samenvatting) | 4, 5 | Klaar |
 | [Fase 4: Website](#fase-4-website) | 6, 7, 8, 9, 10, 14 | Klaar |
 | [Fase 5: Transparantie en kwaliteit](#fase-5-transparantie-en-kwaliteit) | 11, 13 | Klaar |
-| [Fase 6: Volgende stappen](#fase-6-volgende-stappen) | 17, 18 | Open |
+| [Fase 6: Volgende stappen](#fase-6-volgende-stappen) | 17, 18, 19 | Open |
 
 ## Basisopzet
 - [x] Laravel geïnstalleerd en lokaal draaiend
@@ -312,3 +312,55 @@ Feedback van 14-10-2026:
 - [ ] Analysedocument met links naar de Whimsical-borden: doel en doelgroep, functionele beschrijving, technische werking, de oriëntatietoets (methode, uitkomst `orientatie:vergelijken`, conclusie), beperkingen en vervolgstappen
 - [x] Werken op een eigen branch: `git flow feature start documentatie`
 - [ ] Na afronding: release via `git flow release start <versie>` en `finish`, zodat alles op `main` komt
+
+### Bouwblok 19: Prompt caching, LLM-instellingen en productierijpheid
+Feedback van 15-10-2026:
+1. Extra diepte: hoe is prompt caching nu ingebouwd, en hoe kan het beter met het LLM-model (ander model, andere instellingen)? Kijk ook naar de keten LiteLLM (Educom) → OpenRouter → provider: waar kan caching geregeld worden? Doel: tokens besparen en sneller worden door generieke delen te cachen
+2. Wat zijn verbeterpunten, en wat is er nog nodig om MediaLens als product uit te rollen?
+
+**Nulmeting (15-10-2026, uit `storage/logs/laravel.log`)**
+- 487 echte aanroepen: 472.614 input-tokens, waarvan 27.164 uit de cache (5,7%). Maar 44 aanroepen hadden een cache-hit, telkens ±300–1.100 tokens: ongeveer alleen de systeemprompt
+- 288.391 output-tokens: 61% van de input, tegen 2× de inputprijs. Met `thinking: enabled` en `reasoning_effort: high` tellen de denkstappen waarschijnlijk mee als output
+- 83 regels in de log komen uit de tests (`prompt_tokens: 10`): de tests schrijven in de echte log
+
+**Hoe caching in de keten werkt (uitgezocht)**
+- DeepSeek cachet automatisch: een gelijk begin (prefix) van een eerdere prompt is een cache-hit, tegen 10% van de inputprijs. Geen `cache_control` nodig (dat is voor Anthropic en Gemini). De cache blijft uren tot dagen staan
+- OpenRouter verdeelt een model over meerdere providers. Elke provider heeft een eigen cache. OpenRouter blijft pas bij dezelfde provider ("sticky routing") na een cache-hit, of meteen als je een `session_id` meestuurt. Sticky vervalt na 10 minuten zonder aanvragen. Onze runs zijn elk uur, dus elke run begint waarschijnlijk bij een willekeurige provider met een koude cache
+- LiteLLM (Educom) kan zelf ook cachen, maar alleen hele antwoorden op precies dezelfde vraag (response cache). Dat helpt bij herhaalde identieke aanroepen, niet bij een gedeeld begin. Dat staat op de proxy van Educom, niet in onze code
+
+**Proefaanroepen via de proxy (15-10-2026, gebeurtenis 38, ±530 input-tokens, 10 aanroepen, samen < $0,001)**
+- De proxy geeft veel terug dat we nu niet loggen: `provider` (welke partij OpenRouter koos), `usage.cost` (echte kosten), `reasoning_tokens` en `cache_write_tokens`
+- Zonder `session_id`: twee keer dezelfde vraag, allebei bij SiliconFlow, geen cache-hit. Met `session_id`: de herhaling had 441 van de 532 tokens uit de cache (83%), de promptkosten daalden met 66%. LiteLLM geeft `session_id` dus door
+- Providers verschillen in prijs: dezelfde vraag kostte bij SiliconFlow $0,000094 en bij GMICloud $0,000066
+- `thinking: disabled` en `reasoning_effort` uit onze `.env` doen niets: het aantal denk-tokens is gelijk aan zonder die parameters (±70–95). OpenRouter gebruikt `reasoning: {enabled, effort}`. Met `reasoning: {enabled: false}`: 2 output-tokens in plaats van 94, kosten -61%. Maar het antwoord was fout (7 in plaats van 8 artikelen): denken uitzetten moet getoetst worden op kwaliteit
+- Bijna alle output-tokens zijn denk-tokens (bijvoorbeeld 241 van 244 voor een antwoord van één getal)
+
+**Meten**
+- [x] Log per aanroep ook: soort aanroep (samenvatting, categorie, oriëntatie), duur in ms, reasoning-tokens, cache-write-tokens, de provider die OpenRouter koos en de echte kosten (`usage.cost`, anders de schatting uit `.env`)
+- [x] Tests schrijven niet meer in de echte log (`LOG_CHANNEL=null` in `phpunit.xml`)
+- [ ] Command dat de log samenvat: aanroepen, tokens, cache-%, kosten en gemiddelde duur, per soort en per dag
+
+**Caching verbeteren**
+- [x] Prompts zo opbouwen dat het vaste deel vooraan staat en zo lang mogelijk gelijk blijft: systeemprompt, dan artikelen in vaste volgorde (oudste eerst, op id). Een nieuw artikel komt dan achteraan, en bij de volgende samenvatting is het hele eerdere stuk een cache-hit
+- [x] Proberen of `session_id` via de LiteLLM-proxy bij OpenRouter aankomt: ja, zie de proefaanroepen
+- [x] `session_id` meesturen (`medialens-{soort}-{jaarmaanddaguur}`), zodat aanroepen van één run bij dezelfde provider blijven
+- [ ] Proberen of `provider.order` aankomt. Sticky routing vervalt na 10 minuten, en de runs zijn elk uur: met een vaste voorkeursprovider (met terugval) kan de cache van het vorige uur nog raken
+- [x] `thinking` en `reasoning_effort` vervangen door de OpenRouter-parameter `reasoning`. Tests in `LiteLlmTest`, 85 tests groen
+- [ ] Voor- en nameting met dezelfde set gebeurtenissen en artikelen
+
+**Model en instellingen**
+- [x] Denkstappen per soort aanroep instelbaar maken (`LITELLM_REASONING_SAMENVATTING`, `_CATEGORIE`, `_ORIENTATIE`)
+- [ ] Per soort de juiste instelling kiezen na het experiment: oriëntatie en categorie zijn classificatie en hebben misschien minder denkwerk nodig
+- [ ] Experiment op een vaste steekproef: thinking aan/uit en effort high/low, eventueel een ander model. Vergelijken op tokens, duur, kosten en kwaliteit (zelfde label als eerder, bruikbare samenvatting)
+- [ ] Categorie niet apart vragen met alle artikelen (`gebeurtenissen:categoriseren`) als de samenvatting die al meegeeft
+
+**Minder aanroepen en kleinere prompts (uit `ANALYSE.md`)**
+- [ ] D3: bij grote gebeurtenissen niet alle artikelen meesturen, en niet bij elk nieuw artikel opnieuw samenvatten
+- [ ] S1: `samenvattingen:genereren` alleen over zichtbare gebeurtenissen laten lopen
+
+**Documentatie**
+- [x] Notitie bouwblok 19 geschreven: `notities/Fase 6 - Volgende stappen/19. Prompt caching, LLM-instellingen en geheugen.md`. Verwijzing toegevoegd in notitie 4 en 5
+- [x] README (configuratie, log, tests), `ONTWERPKEUZES.md` (samenvatting), `ANALYSE.md` (C3 opgelost) en `.env.example` bijgewerkt
+
+**Productierijpheid**
+- [ ] Verbeterpunten en wat nodig is om MediaLens uit te rollen als hoofdstuk in `ANALYSE.md`: hosting, scheduler en queue, monitoring en kosten, beveiliging, juridisch (RSS-teksten en afbeeldingen), schaal (embeddings in MySQL), kwaliteit van de AI
