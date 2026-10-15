@@ -6,9 +6,9 @@ De schermflow, wireframes en systeemdocumentatie staan in Whimsical:
 
 | Bord | Inhoud |
 |---|---|
-| Schermflow | *(link volgt)* |
-| Wireframes | *(link volgt)* |
-| Systeemdocumentatie | *(link volgt)* |
+| [Schermflow](https://whimsical.com/XLiinR7RzVycN7qhuSqC8j) | Alle pagina's en de links ertussen, met het hoofdpad Home → Gebeurtenis → bron |
+| [Wireframes](https://whimsical.com/9E3kn34v9AC6X7D4MSzKF9) | Home, Gebeurtenis, Bron en Alle gebeurtenissen |
+| [Systeemdocumentatie](https://whimsical.com/X61Kj9QiipYssucXJ6R8y2) | Pipeline, datamodel, onderdelen, externe diensten en stack |
 
 Stand van de data bij deze analyse (15-10-2026): 124 bronnen, 5.777 artikelen, 3.542 gebeurtenissen waarvan 564 zichtbaar (2+ artikelen), 440 samenvattingen, 614 artikelen met een AI-schatting van de oriëntatie.
 
