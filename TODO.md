@@ -303,11 +303,12 @@ Feedback van 14-10-2026:
 - Voorbeelden: The Guardian komt overeen met MBFC; The Sun wijkt af door één foute schatting (kritiek op Labour-politicus Burnham werd left-center)
 
 **Stap 4: analyse en documentatie (nog te doen)**
-- [ ] Whimsical-account maken en Whimsical als MCP-server koppelen in Claude Code (`claude mcp add`, controleren met `/mcp`)
-- [ ] Claude de codebase laten analyseren (pipeline, datamodel, routes, AI-componenten); uitkomst kritisch nalopen en noteren wat de AI goed en fout deed
+- [x] Whimsical-account maken en Whimsical als MCP-server koppelen. `claude` staat niet op het PATH bij de VS Code-extensie, en de koppeling in `~/.claude.json` werd niet gevonden (projectsleutel `C:/` tegen `c:\`). Opgelost met de server in `.mcp.json`, naast Laravel Boost
+- [x] Claude de codebase laten analyseren (pipeline, datamodel, routes, AI-componenten): `ANALYSE.md`, met 12 bevindingen in hoofdstuk 5
+- [ ] Bevindingen in `ANALYSE.md` kritisch nalopen, kolom "Nagelopen" invullen en noteren wat de AI goed en fout deed
 - [ ] Schermflow in Whimsical: home → gebeurtenis-detail → artikel → bronpagina, plus `/over`, onderwerpen, `/artikelen` en filters
 - [ ] Wireframes van de belangrijkste schermen, inclusief de AI-oriëntatie
 - [ ] Systeemdocumentatie in Whimsical: pipeline (ophalen → embeddings → groeperen → samenvatten → oriëntatie schatten), scheduler, ERD, externe diensten (LiteLLM/DeepSeek, Ollama)
 - [ ] Analysedocument met links naar de Whimsical-borden: doel en doelgroep, functionele beschrijving, technische werking, de oriëntatietoets (methode, uitkomst `orientatie:vergelijken`, conclusie), beperkingen en vervolgstappen
-- [ ] Werken op een eigen branch: `git flow feature start documentatie`
+- [x] Werken op een eigen branch: `git flow feature start documentatie`
 - [ ] Na afronding: release via `git flow release start <versie>` en `finish`, zodat alles op `main` komt
