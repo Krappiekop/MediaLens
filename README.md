@@ -17,6 +17,7 @@ RSS-feeds ──► artikelen:ophalen ──► groeperen ──► samenvatting
 2. **Groeperen.** Elk nieuw artikel krijgt een *embedding*: een reeks getallen die de betekenis van de tekst weergeeft, gemaakt door een lokaal model (`nomic-embed-text` via [Ollama](https://ollama.com)). Het artikel komt bij de gebeurtenis van het artikel uit de 48 uur ervoor of erna dat er het meest op lijkt. Lijkt niets genoeg, dan begint het een nieuwe gebeurtenis. Draait Ollama niet, dan valt MediaLens terug op gedeelde trefwoorden (RAKE).
 3. **Samenvatten.** Voor elke gebeurtenis met minstens twee artikelen schrijft een taalmodel (DeepSeek, via de Educom-proxy) een samenvatting in vier velden en kiest het een onderwerp, zoals Politiek of Wereld.
 4. **Tonen.** De website zet de artikelen per gebeurtenis in drie kolommen, op basis van het label van hun bron.
+5. **Toetsen.** Los van de kolommen kan hetzelfde taalmodel de oriëntatie van losse artikelen schatten, met een zekerheid en een onderbouwing. Die schatting staat naast het MBFC-label, als controle. De indeling in kolommen blijft het MBFC-label.
 
 ## Pagina's
 
@@ -28,15 +29,17 @@ RSS-feeds ──► artikelen:ophalen ──► groeperen ──► samenvatting
 | `/gebeurtenissen/{id}` | Eén gebeurtenis: de artikelen in de kolommen Links, Midden en Rechts, de samenvatting en tot 3 gerelateerde gebeurtenissen |
 | `/artikelen` | Alle losse artikelen, ook die nog niet bij een gebeurtenis horen |
 | `/bronnen` | Alle bronnen per Links, Midden en Rechts, met hun betrouwbaarheid |
-| `/bronnen/{id}` | Eén bron: label, betrouwbaarheid, aantal artikelen en gebeurtenissen, en de laatste artikelen |
-| `/over` | Uitleg voor bezoekers: wat de labels, groepen en samenvatting wel en niet betekenen |
+| `/bronnen/{id}` | Eén bron: MBFC-label naast de AI-schatting, betrouwbaarheid, aantal artikelen en gebeurtenissen, en de laatste artikelen |
+| `/over` | Uitleg voor bezoekers: wat de labels, groepen, samenvatting en AI-schatting wel en niet betekenen |
+
+Bij elk artikel met een schatting staat een uitklapbaar label "AI: <label> · zekerheid X%" met de onderbouwing.
 
 ## Tech stack
 
 - **Laravel 13** op **PHP 8.4+**, met **MySQL** (lokaal via XAMPP en phpMyAdmin)
 - **Blade**, **Tailwind CSS** en **Vite** voor de frontend
 - **Ollama** met `nomic-embed-text` voor embeddings, lokaal en gratis
-- **LiteLLM-proxy** (Educom) met **DeepSeek** voor samenvattingen en onderwerpen
+- **LiteLLM-proxy** (Educom) met **DeepSeek** voor samenvattingen, onderwerpen en de oriëntatieschatting per artikel
 - [`donatello-za/rake-php-plus`](https://github.com/Donatello-za/rake-php-plus) voor trefwoorden, als terugval bij het groeperen
 - **PHPUnit** voor de tests
 
@@ -98,6 +101,8 @@ Op een server doe je dat met één cron-regel die elke minuut `php artisan sched
 | `php artisan gebeurtenissen:categoriseren {id?}` | Deelt gebeurtenissen zonder onderwerp alsnog in |
 | `php artisan artikelen:embeddings` | Maakt embeddings voor bestaande artikelen die er nog geen hebben |
 | `php artisan gebeurtenissen:bijwerken {id?}` | Kiest de meest centrale titel als onderwerp en berekent de gemiddelde embedding (voor gerelateerde gebeurtenissen). Gebeurt bij het koppelen al vanzelf; dit is voor bestaande data |
+| `php artisan artikelen:orientatie-schatten {--bron=} {--limit=20} {--opnieuw}` | Laat de AI de oriëntatie van de nieuwste artikelen zonder schatting schatten. Kost een AI-call per artikel, daarom een limiet. Draait niet via de scheduler |
+| `php artisan orientatie:vergelijken {--min=1}` | Zet per bron het MBFC-label naast de AI-schatting: grootste afwijkingen, overeenstemming per bakje en een confusion matrix per artikel. Alleen uit de database, geen AI-calls |
 
 ## Configuratie
 
@@ -122,11 +127,24 @@ php artisan test
 
 De tests draaien op een SQLite-database in het geheugen. Feeds, Ollama en de AI worden nagebootst met `Http::fake()`, dus er is geen internet, Ollama of API-key nodig.
 
+Let op: de app zelf draait op MySQL. Wat in SQLite slaagt, kan in MySQL anders uitpakken (bijvoorbeeld rekenen met een `unsigned` kolom). Controleer database-werk daarom ook op de echte data.
+
+## Branches
+
+De repo gebruikt [git-flow](https://github.com/gittower/git-flow-next) (`git-flow-next`, de klassieke indeling):
+
+- `main`: releases
+- `develop`: integratie van afgeronde features
+- `feature/…`, `bugfix/…`, `release/…`, `hotfix/…`: werk in uitvoering
+
+Een nieuwe feature begin je met `git flow feature start <naam>` en rond je af met `git flow feature finish <naam>`.
+
 ## Beperkingen
 
 MediaLens wil laten zien hoe bronnen verschillen, maar het systeem maakt zelf ook keuzes. De belangrijkste:
 
 - **Labels gelden per bron, niet per artikel.** Ze komen uit een [dataset van Media Bias Fact Check](https://github.com/idiap/Factual-Reporting-and-Political-Bias-Web-Interactions/blob/main/data/mbfc.csv). 9 bronnen die daar niet in staan, zijn met de hand opgezocht op [mediabiasfactcheck.com](https://mediabiasfactcheck.com).
+- **De AI-schatting per artikel is een toets, geen tweede waarheid.** Het model ziet alleen de korte RSS-tekst en schat 57% van de politiek geladen artikelen als `neutral`. In de steekproef (614 artikelen) kwam de AI bij 47% van de bronnen in hetzelfde bakje uit als MBFC. Het trekt beide kanten naar het midden, rechts iets sterker. Een lichte bias van het model naar links is dus niet uitgesloten.
 - **Groepen zijn gelijkenis, geen waarheid.** Twee verhalen over hetzelfde onderwerp kunnen samen in één gebeurtenis komen. Artikelen worden alleen vergeleken met artikelen uit de 48 uur ervoor of erna; nieuws dat langer doorloopt, valt uiteen in meerdere gebeurtenissen.
 - **De samenvatting komt van een taalmodel** en kan zelf vooringenomen zijn. Het model ziet de labels bewust niet.
 - **RSS geeft meestal alleen een korte omschrijving**, geen volledig artikel. Wat daar niet in staat, kan de AI niet samenvatten.
@@ -137,6 +155,6 @@ MediaLens wil laten zien hoe bronnen verschillen, maar het systeem maakt zelf oo
 | Bestand | Inhoud |
 |---|---|
 | [BRONNEN.md](BRONNEN.md) | Alle 124 bronnen met feed-URL en oriëntatie, hoe ze getest zijn, en welke feeds afvielen |
-| [ONTWERPKEUZES.md](ONTWERPKEUZES.md) | Technische keuzes en beperkingen per onderdeel: feeds, groeperen, samenvatting, overzicht, detailpagina |
+| [ONTWERPKEUZES.md](ONTWERPKEUZES.md) | Technische keuzes en beperkingen per onderdeel: feeds, groeperen, oriëntatie en AI-schatting, samenvatting, overzicht, detailpagina |
 | [TODO.md](TODO.md) | Voortgang per fase en bouwblok, met alle open punten onder Volgende stappen |
 | [notities/](notities/) | Mijn leernotities per bouwblok, ingedeeld in dezelfde fases als TODO.md: wat ik gebouwd heb en waarom |

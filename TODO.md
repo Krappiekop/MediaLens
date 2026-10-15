@@ -291,7 +291,7 @@ Feedback van 14-10-2026:
 - [x] **3d: command `orientatie:vergelijken {--min=1}`**: per bron MBFC naast de AI-schatting (grootste afwijking eerst), overeenstemming per MBFC-bakje en een confusion matrix per artikel (MBFC-bakje van de bron tegen AI-bakje van het artikel). Alleen uit de database, geen AI-calls. Tests in `OrientatieVergelijkenTest`, 77 tests groen
 - [ ] Eventueel de 5 oude schattingen (van vóór `ai_politiek`) opnieuw schatten
 - [ ] Feature afronden: `git flow feature finish ai-orientatie`, `develop` pushen
-- [ ] Notitie bouwblok 18 schrijven in `notities/Fase 6 - Volgende stappen/` (Git-flow-stappen, waarom rebase + force-with-lease, de bijsturing van de prompt, de MySQL/SQLite-bug)
+- [x] Notitie bouwblok 18 geschreven: `notities/Fase 6 - Volgende stappen/18. Git-flow en AI-oriëntatie per artikel.md`. README (commands, branches, beperking AI-schatting) en `ONTWERPKEUZES.md` (Oriëntatie) bijgewerkt
 
 **Eerste uitkomsten steekproef (voor de analyse)**
 - 614 geschat: 393 politiek geladen, 216 zonder lading, 5 oud. 73 van de 124 bronnen; bronnen die veel publiceren zijn oververtegenwoordigd, omdat de nieuwste artikelen eerst gingen
