@@ -10,7 +10,7 @@ Voortgang van MediaLens, per fase en per bouwblok. Bouwblokken houden hun oorspr
 | [Fase 3: AI-analyse en samenvatting](#fase-3-ai-analyse-en-samenvatting) | 4, 5 | Klaar |
 | [Fase 4: Website](#fase-4-website) | 6, 7, 8, 9, 10, 14 | Klaar |
 | [Fase 5: Transparantie en kwaliteit](#fase-5-transparantie-en-kwaliteit) | 11, 13 | Klaar |
-| [Fase 6: Volgende stappen](#fase-6-volgende-stappen) | 17, 18, 19 | Open |
+| [Fase 6: Volgende stappen](#fase-6-volgende-stappen) | 17, 18, 19 | 17 en 18 klaar (op het nalopen van de analyse na), 19 deels |
 
 ## Basisopzet
 - [x] Laravel geïnstalleerd en lokaal draaiend
@@ -122,7 +122,7 @@ Artikelen per gebeurtenis door een taalmodel laten vergelijken en samenvatten.
 - [x] JSON-format best practices in de samenvattingsprompt (`json_schema`)
 - [x] Prompt caching (vast system-bericht vooraan, artikelen in het user-bericht; `cached_tokens` in de log)
 - [x] Input- en outputtokens loggen, plus een kostenschatting uit `.env`
-- [x] LLM-parameters via `.env`: `LITELLM_THINKING_TYPE`, `LITELLM_REASONING_EFFORT`, `LITELLM_TEMPERATURE` (leeg = DeepSeek-standaard)
+- [x] LLM-parameters via `.env`: `LITELLM_THINKING_TYPE`, `LITELLM_REASONING_EFFORT`, `LITELLM_TEMPERATURE` (leeg = DeepSeek-standaard). Sinds bouwblok 19 vervangen door `reasoning`: de eerste twee kwamen via OpenRouter niet aan
 - [x] Prompt aangescherpt: kernfeiten zelfstandig leesbaar, betrokkenen als kommagescheiden namen, overeenstemming/verschil over schrijfwijze. Geen MBFC-labels in de prompt of in die twee velden
 
 ## Fase 4: Website
@@ -257,7 +257,7 @@ Alles wat nog open staat, gegroepeerd op soort. Open punten uit eerdere bouwblok
 - [x] GitFlow installeren (bouwblok 18)
 - [x] GitFlow aparte feature branch (bouwblok 18)
 - [ ] Bias door DeepSeek-model (eerste aanwijzing in bouwblok 18: meer artikelen links dan rechts geschat)
-- [ ] Whimsical-account maken voor overdraagbaarheid (bouwblok 18, stap 4)
+- [x] Whimsical-account maken voor overdraagbaarheid (bouwblok 18, stap 4): workspace "MediaLens", borden in de map Shared → MediaLens analyse
 
 ### Bouwblok 18: Feedback verwerken: Git-flow, AI-oriëntatie en analyse
 Feedback van 14-10-2026:
@@ -267,7 +267,7 @@ Feedback van 14-10-2026:
 4. Analyse van de applicatie en documentatie opstellen. Leerdoelen: AI de analyse laten doen, MCP toepassen (Whimsical) voor schermflow, wireframes en systeemdocumentatie (hoe MediaLens werkt)
 
 **Stand van zaken (14-10-2026, einde dag)**
-- Werk staat op branch `feature/ai-orientatie`, gepusht naar GitHub. Nog niet gemerged naar `develop`
+- Werk staat op branch `feature/ai-orientatie`, gepusht naar GitHub. Nog niet gemerged naar `develop` (sindsdien wel, zie hieronder)
 - Database-dump met de 614 schattingen staat in Google Drive (`medialens-dump.zip`, met `LEESMIJ.txt` voor het importeren op de laptop)
 
 **Git-flow (klaar)**
@@ -290,7 +290,7 @@ Feedback van 14-10-2026:
 - [x] Steekproef: 614 artikelen geschat (run na ±500 gestopt, ±7,5 s per artikel, ±$0,00016 per artikel)
 - [x] **3d: command `orientatie:vergelijken {--min=1}`**: per bron MBFC naast de AI-schatting (grootste afwijking eerst), overeenstemming per MBFC-bakje en een confusion matrix per artikel (MBFC-bakje van de bron tegen AI-bakje van het artikel). Alleen uit de database, geen AI-calls. Tests in `OrientatieVergelijkenTest`, 77 tests groen
 - [ ] Eventueel de 5 oude schattingen (van vóór `ai_politiek`) opnieuw schatten
-- [ ] Feature afronden: `git flow feature finish ai-orientatie`, `develop` pushen
+- [x] Feature afronden: `git flow feature finish ai-orientatie`, `develop` pushen
 - [x] Notitie bouwblok 18 geschreven: `notities/Fase 6 - Volgende stappen/18. Git-flow en AI-oriëntatie per artikel.md`. README (commands, branches, beperking AI-schatting) en `ONTWERPKEUZES.md` (Oriëntatie) bijgewerkt
 
 **Eerste uitkomsten steekproef (voor de analyse)**
@@ -302,14 +302,15 @@ Feedback van 14-10-2026:
 - Confusion matrix per artikel: van de politiek geladen artikelen van MBFC-rechtse bronnen schat de AI 16 links (13%), bij MBFC-linkse bronnen maar 6 rechts (3%). De scheefheid 116 tegen 52 komt vooral door de bronnenmix (350 artikelen van linkse tegen 202 van rechtse bronnen), met daarbovenop een lichte trek naar links
 - Voorbeelden: The Guardian komt overeen met MBFC; The Sun wijkt af door één foute schatting (kritiek op Labour-politicus Burnham werd left-center)
 
-**Stap 4: analyse en documentatie (nog te doen)**
+**Stap 4: analyse en documentatie (klaar, op het nalopen van de bevindingen na)**
 - [x] Whimsical-account maken en Whimsical als MCP-server koppelen. `claude` staat niet op het PATH bij de VS Code-extensie, en de koppeling in `~/.claude.json` werd niet gevonden (projectsleutel `C:/` tegen `c:\`). Opgelost met de server in `.mcp.json`, naast Laravel Boost
 - [x] Claude de codebase laten analyseren (pipeline, datamodel, routes, AI-componenten): `ANALYSE.md`, met 12 bevindingen in hoofdstuk 5
 - [ ] Bevindingen in `ANALYSE.md` kritisch nalopen, kolom "Nagelopen" invullen en noteren wat de AI goed en fout deed
-- [ ] Schermflow in Whimsical: home → gebeurtenis-detail → artikel → bronpagina, plus `/over`, onderwerpen, `/artikelen` en filters
-- [ ] Wireframes van de belangrijkste schermen, inclusief de AI-oriëntatie
-- [ ] Systeemdocumentatie in Whimsical: pipeline (ophalen → embeddings → groeperen → samenvatten → oriëntatie schatten), scheduler, ERD, externe diensten (LiteLLM/DeepSeek, Ollama)
-- [ ] Analysedocument met links naar de Whimsical-borden: doel en doelgroep, functionele beschrijving, technische werking, de oriëntatietoets (methode, uitkomst `orientatie:vergelijken`, conclusie), beperkingen en vervolgstappen
+- [x] [Schermflow](https://whimsical.com/XLiinR7RzVycN7qhuSqC8j) in Whimsical: alle 8 pagina's en de links ertussen, het hoofdpad home → gebeurtenis → artikel of bronpagina met dikke pijlen, de menu's die op elke pagina staan als één blok. De pijlen nagelopen in de Blade-views
+- [x] [Wireframes](https://whimsical.com/9E3kn34v9AC6X7D4MSzKF9): Home, Gebeurtenis, Bron en Alle gebeurtenissen, met de AI-oriëntatie op de artikelen en de bronpagina. Eerste versie met de wireframe-onderdelen van Whimsical klopte niet met de site; opnieuw gebouwd met losse vormen in de kleuren van de site. Daarna nog een keer: `#FFFFFF` en tekst zonder kleur kleuren in Whimsical mee met dark mode
+- [x] [Systeemdocumentatie](https://whimsical.com/X61Kj9QiipYssucXJ6R8y2): pipeline als stroomschema, datamodel als ERD, onderdelen, externe diensten, stack. Bijgewerkt na bouwblok 19 (caching, reasoning, matcher in porties)
+- [x] `ANALYSE.md` met de links naar de drie borden bovenaan: doel en doelgroep, functionele beschrijving, technische werking, de oriëntatietoets, bevindingen, beperkingen en vervolgstappen
+- [x] Notitie geschreven: `notities/Fase 6 - Volgende stappen/18b. Analyse en documentatie met Whimsical (MCP).md`
 - [x] Werken op een eigen branch: `git flow feature start documentatie`
 - [ ] Na afronding: release via `git flow release start <versie>` en `finish`, zodat alles op `main` komt
 

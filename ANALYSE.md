@@ -1,6 +1,6 @@
 # Analyse van MediaLens
 
-Een analyse van de applicatie zoals die er na bouwblok 18 uitziet: wat MediaLens doet, hoe het technisch werkt, wat de toets van de oriëntatielabels opleverde, en wat er bij een analyse van de code opviel.
+Een analyse van de applicatie zoals die er na bouwblok 18 uitziet: wat MediaLens doet, hoe het technisch werkt, wat de toets van de oriëntatielabels opleverde, en wat er bij een analyse van de code opviel. Wat in bouwblok 19 veranderde (prompt caching, LLM-instellingen, de matcher), staat erbij met het bouwbloknummer.
 
 De schermflow, wireframes en systeemdocumentatie staan in Whimsical:
 
@@ -80,9 +80,9 @@ orientatie:vergelijken                            (MBFC tegen AI, alleen databas
 | Onderdeel | Bestand | Taak |
 |---|---|---|
 | Ophalen | `app/Console/Commands/ArtikelenOphalen.php` | Feeds parallel ophalen, XML lezen, tekst schoonmaken, afbeelding zoeken, artikel opslaan |
-| Matcher | `app/Services/GebeurtenisMatcher.php` | Embeddings maken, beste kandidaat kiezen, gebeurtenis aanmaken of bijwerken, gerelateerde gebeurtenissen |
+| Matcher | `app/Services/GebeurtenisMatcher.php` | Embeddings maken, beste kandidaat kiezen (sinds bouwblok 19 in porties van 500), gebeurtenis aanmaken of bijwerken, gerelateerde gebeurtenissen |
 | Embeddings | `app/Services/Ollama.php` | Batch van teksten naar `/api/embed` |
-| Taalmodel | `app/Services/LiteLlm.php` | Chat-aanroep met `json_schema`, kosten per aanroep in de log |
+| Taalmodel | `app/Services/LiteLlm.php` | Chat-aanroep met `json_schema`. Sinds bouwblok 19 met `session_id` per soort en uur (cache bij dezelfde provider) en `reasoning` per soort; log met provider, duur, tokens en kosten |
 | Samenvatting | `app/Services/ArtikelVergelijker.php` | Prompt met alle artikelen van een gebeurtenis, vier velden plus categorie, validatie |
 | Oriëntatie | `app/Services/OrientatieSchatter.php` | Prompt met één artikel, zonder bronnaam of label; zekerheid begrensd in de code |
 | Planning | `routes/console.php` | `artikelen:ophalen` en `samenvattingen:genereren` elk uur, zonder overlap |

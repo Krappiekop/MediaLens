@@ -42,6 +42,7 @@ Bij elk artikel met een schatting staat een uitklapbaar label "AI: <label> · ze
 - **LiteLLM-proxy** (Educom) met **DeepSeek** voor samenvattingen, onderwerpen en de oriëntatieschatting per artikel
 - [`donatello-za/rake-php-plus`](https://github.com/Donatello-za/rake-php-plus) voor trefwoorden, als terugval bij het groeperen
 - **PHPUnit** voor de tests
+- Voor AI-assistenten staan in `.mcp.json` twee MCP-servers: **Laravel Boost** (database, logs, documentatie) en **Whimsical** (de borden bij `ANALYSE.md`)
 
 ## Installatie
 
@@ -160,6 +161,6 @@ MediaLens wil laten zien hoe bronnen verschillen, maar het systeem maakt zelf oo
 |---|---|
 | [BRONNEN.md](BRONNEN.md) | Alle 124 bronnen met feed-URL en oriëntatie, hoe ze getest zijn, en welke feeds afvielen |
 | [ONTWERPKEUZES.md](ONTWERPKEUZES.md) | Technische keuzes en beperkingen per onderdeel: feeds, groeperen, oriëntatie en AI-schatting, samenvatting, overzicht, detailpagina |
-| [ANALYSE.md](ANALYSE.md) | Analyse van de applicatie: doel, pagina's en schermflow, technische werking, de toets van de oriëntatielabels, bevindingen uit de code-analyse |
+| [ANALYSE.md](ANALYSE.md) | Analyse van de applicatie: doel, pagina's en schermflow, technische werking, de toets van de oriëntatielabels, bevindingen uit de code-analyse. Met bovenaan de links naar de Whimsical-borden: [schermflow](https://whimsical.com/XLiinR7RzVycN7qhuSqC8j), [wireframes](https://whimsical.com/9E3kn34v9AC6X7D4MSzKF9) en [systeemdocumentatie](https://whimsical.com/X61Kj9QiipYssucXJ6R8y2) |
 | [TODO.md](TODO.md) | Voortgang per fase en bouwblok, met alle open punten onder Volgende stappen |
 | [notities/](notities/) | Mijn leernotities per bouwblok, ingedeeld in dezelfde fases als TODO.md: wat ik gebouwd heb en waarom |
