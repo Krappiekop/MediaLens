@@ -173,6 +173,8 @@ Deze bevindingen komen uit een analyse van de code door Claude (AI), met de cijf
 | S2 | De dubbelcheck `Artikel::where('url', $url)` draait per feed-item, maar `url` (tot 2048 tekens) heeft geen index | Elke run ±3.000 keer de hele tabel doorzoeken; wordt trager naarmate de database groeit | Kolom met een hash van de URL, met een unieke index | |
 | S3 | `publicatiedatum` heeft geen index, terwijl het matchvenster, Hot, de blindspot en alle lijsten erop filteren of sorteren | Zelfde: trager bij groei | Index op `publicatiedatum` | |
 | S4 | De gebeurtenispagina laadt alle kolommen van elk artikel, ook de embedding (768 getallen als JSON) | Bij 124 artikelen worden 124 vectoren uit MySQL gehaald die de pagina niet gebruikt. In notitie 17 bleek dat transport het dure deel | Kolommen selecteren zonder `embedding`, zoals `voorKaart()` al doet | |
+| S5 | *Na de analyse gevonden.* De matcher haalde bij elk nieuw artikel alle kandidaten van ±48 uur in één keer op, met alle kolommen: ±2.500 artikelen met elk ±9,5 KB embedding | Op 15-10-2026 liep `artikelen:ophalen` vast op de 128 MB van PHP, en bleven 11 opgeslagen artikelen zonder gebeurtenis | Opgelost in bouwblok 19: alleen de nodige kolommen, in porties van 500 (`lazyById`). Losgebleven artikelen worden de volgende run alsnog gekoppeld | |
+
 ### Code
 
 | # | Bevinding | Gevolg | Mogelijke oplossing | Nagelopen |

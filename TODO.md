@@ -335,6 +335,11 @@ Feedback van 15-10-2026:
 - `thinking: disabled` en `reasoning_effort` uit onze `.env` doen niets: het aantal denk-tokens is gelijk aan zonder die parameters (±70–95). OpenRouter gebruikt `reasoning: {enabled, effort}`. Met `reasoning: {enabled: false}`: 2 output-tokens in plaats van 94, kosten -61%. Maar het antwoord was fout (7 in plaats van 8 artikelen): denken uitzetten moet getoetst worden op kwaliteit
 - Bijna alle output-tokens zijn denk-tokens (bijvoorbeeld 241 van 244 voor een antwoord van één getal)
 
+**Bug: `artikelen:ophalen` liep vast op geheugen (15-10-2026)**
+- [x] `Allowed memory size of 134217728 bytes exhausted` om 11:01, 11:05 en 11:09. Oorzaak: de matcher haalde alle kandidaten in het venster van 48 uur in één keer op, met alle kolommen. Dat waren er 2.496 (voor een artikel van twee dagen oud 4.246), elk met een embedding van ±9,5 KB JSON. Door de groei van de data, zelfde soort probleem als S4 in `ANALYSE.md`
+- [x] Opgelost: alleen de kolommen die de matcher gebruikt, in porties van 500 (`lazyById`)
+- [x] De crash liet 11 opgeslagen maar ongekoppelde artikelen achter (en 12 van 14-10 08:37). `artikelen:ophalen` sloeg die over omdat de URL al bestond. Nu koppelt het command een bestaand artikel zonder gebeurtenis alsnog. Test in `ArtikelenOphalenTest`
+
 **Meten**
 - [x] Log per aanroep ook: soort aanroep (samenvatting, categorie, oriëntatie), duur in ms, reasoning-tokens, cache-write-tokens, de provider die OpenRouter koos en de echte kosten (`usage.cost`, anders de schatting uit `.env`)
 - [x] Tests schrijven niet meer in de echte log (`LOG_CHANNEL=null` in `phpunit.xml`)
@@ -360,7 +365,7 @@ Feedback van 15-10-2026:
 
 **Documentatie**
 - [x] Notitie bouwblok 19 geschreven: `notities/Fase 6 - Volgende stappen/19. Prompt caching, LLM-instellingen en geheugen.md`. Verwijzing toegevoegd in notitie 4 en 5
-- [x] README (configuratie, log, tests), `ONTWERPKEUZES.md` (samenvatting), `ANALYSE.md` (C3 opgelost) en `.env.example` bijgewerkt
+- [x] README (commands, configuratie, log, tests), `ONTWERPKEUZES.md` (samenvatting en groeperen), `ANALYSE.md` (C3 opgelost, S5 toegevoegd) en `.env.example` bijgewerkt
 
 **Productierijpheid**
 - [ ] Verbeterpunten en wat nodig is om MediaLens uit te rollen als hoofdstuk in `ANALYSE.md`: hosting, scheduler en queue, monitoring en kosten, beveiliging, juridisch (RSS-teksten en afbeeldingen), schaal (embeddings in MySQL), kwaliteit van de AI

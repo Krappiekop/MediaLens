@@ -63,6 +63,7 @@ class ArtikelenOphalen extends Command
             }
 
             $nieuweArtikelen = [];
+            $losseArtikelen = [];
 
             foreach ($xml->channel->item as $item) {
                 $titel = trim((string) $item->title); // titel van het artikel, zonder witregels eromheen
@@ -114,6 +115,11 @@ class ArtikelenOphalen extends Command
                         $bestaandArtikel->update(['publicatiedatum' => $publicatiedatum]);
                     }
 
+                    // een eerdere run is na het opslaan maar vóór het koppelen gestopt: alsnog koppelen
+                    if ($bestaandArtikel->gebeurtenis_id === null) {
+                        $losseArtikelen[] = $bestaandArtikel;
+                    }
+
                     continue;
                 }
 
@@ -128,26 +134,33 @@ class ArtikelenOphalen extends Command
                 ]);
             }
 
-            // embeddings voor alle nieuwe artikelen van deze bron in één aanroep naar Ollama
+            $teKoppelen = [...$nieuweArtikelen, ...$losseArtikelen];
+
+            // embeddings voor alle te koppelen artikelen van deze bron in één aanroep naar Ollama
             if (config('services.matcher.methode') === 'embeddings') {
-                $matcher->maakEmbeddings($nieuweArtikelen);
+                $matcher->maakEmbeddings($teKoppelen);
             }
 
-            $opgehaald = 0;
             $nieuw = 0;
             $bestaand = 0;
 
-            foreach ($nieuweArtikelen as $artikel) {
+            foreach ($teKoppelen as $artikel) {
                 $resultaat = $matcher->koppel($artikel);
 
-                $opgehaald++;
                 if ($resultaat === 'nieuw') {
                     $nieuw++;
                 } elseif ($resultaat === 'bestaand') {
                     $bestaand++;
                 }
             }
-            $this->line("{$opgehaald} nieuwe artikelen, {$nieuw} nieuwe gebeurtenissen, {$bestaand} bij een bestaande gebeurtenis.");
+
+            $regel = count($nieuweArtikelen)." nieuwe artikelen, {$nieuw} nieuwe gebeurtenissen, {$bestaand} bij een bestaande gebeurtenis.";
+
+            if ($losseArtikelen !== []) {
+                $regel .= ' Inclusief '.count($losseArtikelen).' eerder opgeslagen artikelen die nog los stonden.';
+            }
+
+            $this->line($regel);
         }
 
         return self::SUCCESS;

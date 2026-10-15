@@ -96,7 +96,7 @@ Op een server doe je dat met één cron-regel die elke minuut `php artisan sched
 
 | Command | Wat het doet |
 |---|---|
-| `php artisan artikelen:ophalen` | Haalt alle feeds op (10 tegelijk), slaat nieuwe artikelen op, maakt embeddings en koppelt ze aan een gebeurtenis. Draait elk uur via de scheduler |
+| `php artisan artikelen:ophalen` | Haalt alle feeds op (10 tegelijk), slaat nieuwe artikelen op, maakt embeddings en koppelt ze aan een gebeurtenis. Een artikel dat een eerdere run zonder gebeurtenis liet staan, wordt alsnog gekoppeld. Draait elk uur via de scheduler |
 | `php artisan samenvattingen:genereren {id?}` | Maakt of vernieuwt samenvattingen voor gebeurtenissen met 2+ artikelen, en kiest het onderwerp. Draait elk uur via de scheduler, na het ophalen |
 | `php artisan gebeurtenissen:categoriseren {id?}` | Deelt gebeurtenissen zonder onderwerp alsnog in |
 | `php artisan artikelen:embeddings` | Maakt embeddings voor bestaande artikelen die er nog geen hebben |

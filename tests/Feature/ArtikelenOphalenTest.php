@@ -186,6 +186,42 @@ class ArtikelenOphalenTest extends TestCase
         $this->assertSame(['https://news.example.test/enters'], Artikel::pluck('url')->all());
     }
 
+    public function test_an_article_left_unlinked_by_an_interrupted_run_is_linked_on_the_next_run(): void
+    {
+        Http::preventStrayRequests();
+        config(['services.matcher.methode' => 'rake']);
+
+        $bron = Bron::create(['naam' => 'Testnieuws', 'orientatie' => 'neutral']);
+        $bron->feed_url = 'https://feeds.example.test/news.xml';
+        $bron->save();
+
+        $losArtikel = Artikel::create([
+            'titel' => 'Senaat stemt over begroting',
+            'publicatiedatum' => '2026-10-12 10:00:00',
+            'volledige_tekst' => 'De senaat stemt vandaag.',
+            'url' => 'https://news.example.test/begroting',
+            'bron_id' => $bron->id,
+        ]);
+
+        $feed = '<?xml version="1.0"?><rss version="2.0"><channel><item>'
+            .'<title>Senaat stemt over begroting</title>'
+            .'<link>https://news.example.test/begroting</link>'
+            .'<pubDate>Mon, 12 Oct 2026 08:00:00 GMT</pubDate>'
+            .'<description>De senaat stemt vandaag.</description>'
+            .'</item></channel></rss>';
+
+        Http::fake([
+            'https://feeds.example.test/news.xml' => Http::response($feed),
+        ]);
+
+        $this->artisan('artikelen:ophalen')
+            ->expectsOutput('0 nieuwe artikelen, 1 nieuwe gebeurtenissen, 0 bij een bestaande gebeurtenis. Inclusief 1 eerder opgeslagen artikelen die nog los stonden.')
+            ->assertSuccessful();
+
+        $this->assertSame(1, Artikel::count());
+        $this->assertNotNull($losArtikel->fresh()->gebeurtenis_id);
+    }
+
     public function test_fetching_a_feed_trims_whitespace_around_the_title_of_the_article_and_event(): void
     {
         Http::preventStrayRequests();

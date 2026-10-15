@@ -114,16 +114,24 @@ class GebeurtenisMatcher
         }
 
         $publicatie = Carbon::parse($artikel->publicatiedatum);
+        $gebruiktEmbeddings = $this->gebruiktEmbeddings($artikel);
 
-        $kandidaten = Artikel::where('id', '!=', $artikel->id)          // <--- artikel is niet zelf de kandidaat
+        /*
+         * In het venster van 48 uur liggen duizenden artikelen, elk met een embedding van ±9,5 KB JSON. Alles in één keer
+         * ophalen liep in oktober 2026 boven de 128 MB van PHP (bouwblok 19). Daarom alleen de nodige kolommen,
+         * in porties van 500 op id.
+         */
+        $kandidaten = Artikel::query()
+            ->select($gebruiktEmbeddings ? ['id', 'gebeurtenis_id', 'embedding'] : ['id', 'gebeurtenis_id', 'titel', 'volledige_tekst'])
+            ->where('id', '!=', $artikel->id)                           // <--- artikel is niet zelf de kandidaat
             ->whereNotNull('gebeurtenis_id')                            // <--- artikel is gekoppeld aan een gebeurtenis
             ->whereBetween('publicatiedatum', [                         // <--- alleen artikelen binnen het venster, ook over middernacht heen
                 $publicatie->copy()->subHours($this->maxUren),
                 $publicatie->copy()->addHours($this->maxUren),
             ])
-            ->get();
+            ->lazyById(500);
 
-        $besteKandidaat = $this->gebruiktEmbeddings($artikel)
+        $besteKandidaat = $gebruiktEmbeddings
             ? $this->besteKandidaatOpEmbedding($artikel, $kandidaten)
             : $this->besteKandidaatOpTrefwoorden($artikel, $kandidaten);
 
